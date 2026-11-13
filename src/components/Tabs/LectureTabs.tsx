@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Check, 
-  Volume2, 
   Trash2, 
   Clock, 
   Send, 
@@ -24,7 +23,6 @@ export const LectureTabs: React.FC = () => {
 
   const [noteText, setNoteText] = useState('');
   const [discussionInput, setDiscussionInput] = useState('');
-  const [speakingWord, setSpeakingWord] = useState<string | null>(null);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -47,20 +45,6 @@ export const LectureTabs: React.FC = () => {
     if (discussionInput.trim()) {
       postDiscussion(discussionInput.trim());
       setDiscussionInput('');
-    }
-  };
-
-  // Web Speech API text-to-speech for vocabulary
-  const speakTerm = (word: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setSpeakingWord(word);
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      utterance.onend = () => setSpeakingWord(null);
-      utterance.onerror = () => setSpeakingWord(null);
-      window.speechSynthesis.speak(utterance);
     }
   };
 
@@ -143,35 +127,6 @@ export const LectureTabs: React.FC = () => {
                   <span className="text-xs text-slate-700 font-medium leading-snug">{obj}</span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Core Vocabulary with Text-to-Speech triggers */}
-          <div className="pt-1">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              Core Vocabulary (Click to Listen)
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {activeSession.vocabulary.map((v, i) => {
-                const isSpeaking = speakingWord === v.term;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => speakTerm(v.term)}
-                    className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      isSpeaking
-                        ? 'bg-indigo-600 text-white shadow-sm scale-105'
-                        : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
-                    }`}
-                    title={`Pronounce "${v.term}"`}
-                  >
-                    <span>{v.term}</span>
-                    <Volume2
-                      className={`w-3 h-3 ${isSpeaking ? 'animate-pulse text-white' : 'text-slate-400'}`}
-                    />
-                  </button>
-                );
-              })}
             </div>
           </div>
         </div>

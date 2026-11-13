@@ -27,12 +27,14 @@ async def get_rapid_revision_cheat_sheet(video_id: str):
                 formatted_full_transcript=formatted,
             )
 
-            return generate_structured(
+            resp = generate_structured(
                 prompt=user_prompt,
                 response_model=RapidRevisionResponse,
                 system_instruction=system_instruction,
                 temperature=0.2,
             )
+            resp.video_id = video_id
+            return resp
         except Exception as e:
             logger.warning(f"Live revision generation failed, using fallback: {e}")
 

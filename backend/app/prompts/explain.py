@@ -76,3 +76,4 @@ Please explain this concept specifically following the {mode.value.upper()} pers
 Cite the exact start and end timestamps where this is shown in the video.
 """
     return system_instruction, user_prompt
+

@@ -79,3 +79,4 @@ def test_explain_simpler_mode():
     assert data["not_covered"] is False
     assert "Simplified" in data["concept_tag"]
     assert len(data["citations"]) >= 1
+

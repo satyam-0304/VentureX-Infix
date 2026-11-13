@@ -45,3 +45,4 @@ def get_demo_video_title(video_id: str) -> str:
     if video_id in DEMO_VIDEOS:
         return DEMO_VIDEOS[video_id]["title"]
     return "Polymers Class 12 Chemistry"
+

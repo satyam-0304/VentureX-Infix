@@ -112,3 +112,4 @@ async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         logger.error(f"Error processing Q&A request: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to generate answer: {str(e)}")
+

@@ -43,3 +43,4 @@ If this topic is not discussed in the transcript, set "not_covered": true.
 Include timestamp citations for the exact seconds where this explanation appears.
 """
     return QA_SYSTEM_INSTRUCTION, user_prompt
+

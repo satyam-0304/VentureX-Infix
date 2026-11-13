@@ -60,3 +60,4 @@ def test_chat_propagation_timestamp():
     assert any("propagation" in c["concept_tag"].lower() or "propagation" in data["answer"].lower() for c in [data])
     assert len(data["citations"]) >= 1
     assert data["citations"][0]["start_sec"] == 950
+

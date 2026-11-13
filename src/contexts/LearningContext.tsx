@@ -65,6 +65,8 @@ interface LearningContextType {
   postDiscussion: (text: string) => void;
   upvoteDiscussion: (postId: string) => void;
   sendChatMessage: (text: string, mode?: 'standard' | 'simpler' | 'analogy' | 'step_by_step' | 'hinglish') => Promise<void>;
+  updateSessionVideoUrl: (url: string) => void;
+  setChapters: (chapters: import('../types').Chapter[]) => void;
   resetToDefaultSessions: () => void;
 }
 
@@ -549,6 +551,20 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const updateSessionVideoUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setSessions((prev) =>
+      prev.map((s) => (s.id === activeSessionId ? { ...s, videoUrl: trimmed, updatedAt: Date.now() } : s))
+    );
+  };
+
+  const setChapters = (chapters: import('../types').Chapter[]) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === activeSessionId ? { ...s, chapters, updatedAt: Date.now() } : s))
+    );
+  };
+
   const resetToDefaultSessions = () => {
     setSessions(DEFAULT_SESSIONS);
     setActiveSessionIdState(DEFAULT_SESSIONS[0].id);
@@ -610,6 +626,8 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         postDiscussion,
         upvoteDiscussion,
         sendChatMessage,
+        updateSessionVideoUrl,
+        setChapters,
         resetToDefaultSessions,
       }}
     >

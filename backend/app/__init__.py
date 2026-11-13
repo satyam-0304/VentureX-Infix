@@ -1,2 +1,2 @@
-"""InSitu Tutor Backend Application Package."""
+"""Lurnix Tutor Backend Application Package."""
 

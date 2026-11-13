@@ -1,5 +1,5 @@
 # TEAM BRIEF — MEMBER 4: BACKEND DATA & INGEST
-**Project:** InSitu Tutor (VentureX E-Summit'26 PS3)  
+**Project:** Lurnix (VentureX E-Summit'26 PS3)  
 **Role:** Backend Data Engineer (Database, Transcript Pipeline, Quiz/Notes API & Pre-Seed Fixtures)  
 **Teammates:** Member 1 (Frontend Lead), Member 2 (Frontend Features), Member 3 (Backend/AI Lead)
 

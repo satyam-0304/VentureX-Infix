@@ -72,3 +72,4 @@ def test_rapid_revision_schema_validation():
     assert obj.video_id == "demo_polymers"
     assert len(obj.high_yield_points) == 1
     assert obj.high_yield_points[0].timestamp_sec == 845
+

@@ -5,7 +5,7 @@ from app.schemas import HealthResponse
 from app.services.gemini import is_gemini_configured
 
 app = FastAPI(
-    title="InSitu Tutor API",
+    title="Lurnix Tutor API",
     description="Contextual, grounded in-situ learning companion for video lectures.",
     version="1.0.0",
 )
@@ -25,7 +25,7 @@ async def health_check():
     """Verify backend health and Gemini configuration status."""
     return HealthResponse(
         status="ok",
-        service="insitu-tutor-api",
+        service="lurnix-tutor-api",
         gemini_configured=is_gemini_configured(),
         environment=settings.environment,
     )
@@ -35,7 +35,7 @@ async def health_check():
 async def root():
     """Root status greeting."""
     return {
-        "message": "InSitu Tutor API is running.",
+        "message": "Lurnix Tutor API is running.",
         "docs": "/docs",
         "health": "/health",
     }

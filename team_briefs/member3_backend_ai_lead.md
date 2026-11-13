@@ -1,5 +1,5 @@
 # TEAM BRIEF — MEMBER 3: BACKEND & AI LEAD
-**Project:** InSitu Tutor (VentureX E-Summit'26 PS3)  
+**Project:** Lurnix (VentureX E-Summit'26 PS3)  
 **Role:** Backend & AI Lead (FastAPI Core, Gemini Integration, Context Slicer & Structured Prompts)  
 **Teammates:** Member 1 (Frontend Lead), Member 2 (Frontend Features), Member 4 (Backend Data & Ingest)
 

@@ -4,7 +4,7 @@
 
 ## 1️⃣ Project Title
 
-* **Project Name:** InSitu Tutor  
+* **Project Name:** Lurnix  
 * **One-Line Pitch:**  
   > *"We help online self-learners master complex video lectures by transforming passive YouTube watching into an active, contextual, and closed-loop AI tutoring session."*
 
@@ -27,7 +27,7 @@
 ## 3️⃣ Proposed Solution
 
 ### How the Product Solves the Problem
-*InSitu Tutor* is an in-situ AI learning companion that lives directly alongside any YouTube lecture. Rather than treating a video as a static video file, it reads the lecture transcript in real-time and synchronizes with the video player's exact playback timestamp. It acts as an attentive personal tutor sitting beside the student: detecting when they are stuck, explaining concepts in their preferred mental model, and testing their comprehension.
+*Lurnix* is an interactive AI learning companion that lives directly alongside any YouTube lecture. Rather than treating a video as a static video file, it reads the lecture transcript in real-time and synchronizes with the video player's exact playback timestamp. It acts as an attentive personal tutor sitting beside the student: detecting when they are stuck, explaining concepts in their preferred mental model, and testing their comprehension.
 
 ### 5 Key Features Built in 10 Hours
 
@@ -44,11 +44,11 @@
 4. **Auto-Generated Chapter Notes & LaTeX Formula Sheet (P5):**  
    Extracts high-yield lecture summaries and renders mathematical notation crisply using LaTeX/KaTeX (e.g., $R\text{-}O\text{-}O\text{-}R \rightarrow 2 R\text{-}O^\bullet$), with a 1-click browser-native **Print-to-PDF** export.
 5. **Closed-Loop Concept Quizzes & Video Remediation (P6 — Main Differentiator):**  
-   Every chapter features 3 concept-tagged multiple-choice questions. When a student chooses an incorrect answer, *InSitu Tutor* doesn't just display a red "X"—it diagnoses the specific conceptual misconception and provides an active **`[Rewatch 13:50 – 14:40]`** button that transports the student straight back to the 50-second clip where the instructor explained it.
+   Every chapter features 3 concept-tagged multiple-choice questions. When a student chooses an incorrect answer, *Lurnix* doesn't just display a red "X"—it diagnoses the specific conceptual misconception and provides an active **`[Rewatch 13:50 – 14:40]`** button that transports the student straight back to the 50-second clip where the instructor explained it.
 
 ### What Makes It Different from Existing Solutions
 * **Existing AI Video Tools (Summarize.tech, NoteGPT, Harpa):** Only summarize entire videos into generic text walls or act as external generic chatbots detached from the student's playback moment.
-* **InSitu Tutor:** **We teach from the video.** We maintain micro-second synchronization with the video player, detect confusion before the student gives up, and close the learning loop by returning the student directly to the exact seconds they misunderstood.
+* **Lurnix:** **We teach from the video.** We maintain micro-second synchronization with the video player, detect confusion before the student gives up, and close the learning loop by returning the student directly to the exact seconds they misunderstood.
 
 ---
 

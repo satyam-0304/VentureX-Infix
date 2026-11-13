@@ -1,5 +1,5 @@
 # TEAM BRIEF — MEMBER 1: FRONTEND LEAD
-**Project:** InSitu Tutor (VentureX E-Summit'26 PS3)  
+**Project:** Lurnix (VentureX E-Summit'26 PS3)  
 **Role:** Frontend Lead (YouTube Player Engine, Video State, Timeline & Confusion UX)  
 **Teammates:** Member 2 (Frontend Features), Member 3 (Backend/AI Lead), Member 4 (Backend Data & Ingest)
 

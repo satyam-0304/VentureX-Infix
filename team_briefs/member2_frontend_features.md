@@ -1,5 +1,5 @@
 # TEAM BRIEF — MEMBER 2: FRONTEND FEATURES
-**Project:** InSitu Tutor (VentureX E-Summit'26 PS3)  
+**Project:** Lurnix (VentureX E-Summit'26 PS3)  
 **Role:** Frontend Feature Engineer (Q&A Chat, Explain Modes, KaTeX Notes & Remediation Quiz)  
 **Teammates:** Member 1 (Frontend Lead), Member 3 (Backend/AI Lead), Member 4 (Backend Data & Ingest)
 

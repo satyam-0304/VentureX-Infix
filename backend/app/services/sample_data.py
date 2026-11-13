@@ -5,7 +5,7 @@ and frontend can execute complete end-to-end flows immediately with zero network
 """
 
 from typing import Any
-from app.schemas import QuizQuestion, Chapter, ChapterNotes
+from app.schemas import QuizQuestion, Chapter, ChapterNotes, RapidRevisionResponse, RapidRevisionItem
 
 DEMO_VIDEOS: dict[str, dict[str, Any]] = {
     "demo_polymers": {
@@ -230,3 +230,50 @@ def get_demo_question(video_id: str, question_id: int) -> QuizQuestion | None:
         if q.id == question_id:
             return q
     return None
+
+
+DEMO_REVISIONS: dict[str, RapidRevisionResponse] = {
+    "demo_polymers": RapidRevisionResponse(
+        video_id="demo_polymers",
+        executive_summary="This lecture covers the complete CBSE Class 12 chemistry unit on Polymers, focusing on source classification, free radical chain addition mechanisms (using benzoyl peroxide), step-growth polycondensation (Nylon 6,6 and Bakelite), and rubber vulcanization.",
+        high_yield_points=[
+            RapidRevisionItem(
+                concept="Polymer Definition & Molecular Mass",
+                key_rule="High molecular mass macromolecules (10^3 to 10^7 u) formed by covalent repetition of monomers.",
+                timestamp_sec=35,
+            ),
+            RapidRevisionItem(
+                concept="Source Classification",
+                key_rule="Natural (starch, cellulose, natural rubber) vs Semi-synthetic (Rayon) vs Synthetic (Polythene, Nylon).",
+                timestamp_sec=120,
+            ),
+            RapidRevisionItem(
+                concept="Free Radical Chain Initiation",
+                key_rule="Benzoyl peroxide homolytically splits on mild heating into phenyl free radicals to trigger addition.",
+                timestamp_sec=845,
+            ),
+            RapidRevisionItem(
+                concept="Condensation Elimination Rule",
+                key_rule="Unlike addition, condensation requires bifunctional monomers and eliminates small molecules (H2O, alcohol).",
+                timestamp_sec=1480,
+            ),
+            RapidRevisionItem(
+                concept="Rubber Vulcanization Chemistry",
+                key_rule="Heating raw rubber with sulfur at 373-415 K creates disulfide bridges between double bonds, stopping stickiness.",
+                timestamp_sec=2500,
+            ),
+        ],
+        cheat_sheet_formulas=[
+            "$$\\text{Initiator Cleavage: } \\text{C}_6\\text{H}_5\\text{-CO-O-O-CO-C}_6\\text{H}_5 \\xrightarrow{\\Delta} 2 \\text{C}_6\\text{H}_5^\\bullet + 2\\text{CO}_2$$",
+            "$$\\text{Propagation Attack: } \\text{C}_6\\text{H}_5^\\bullet + \\text{CH}_2=\\text{CH}_2 \\rightarrow \\text{C}_6\\text{H}_5\\text{-CH}_2\\text{-CH}_2^\\bullet$$",
+            "$$\\text{Nylon 6,6: } n\\,\\text{HOOC-(CH}_2)_4\\text{-COOH} + n\\,\\text{H}_2\\text{N-(CH}_2)_6\\text{-NH}_2 \\rightarrow \\text{Polymer} + (2n-1)\\text{H}_2\\text{O}$$",
+        ],
+    )
+}
+
+
+def get_demo_revision(video_id: str) -> RapidRevisionResponse:
+    """Retrieve 10-minute rapid revision cheat sheet for a video."""
+    if video_id in DEMO_REVISIONS:
+        return DEMO_REVISIONS[video_id]
+    return DEMO_REVISIONS["demo_polymers"]

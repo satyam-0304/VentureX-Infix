@@ -6,6 +6,7 @@ from app.services.gemini import is_gemini_configured
 from app.routes.chat import router as chat_router
 from app.routes.quiz import router as quiz_router
 from app.routes.notes import router as notes_router
+from app.routes.revision import router as revision_router
 
 app = FastAPI(
     title="Lurnix Tutor API",
@@ -26,6 +27,7 @@ app.add_middleware(
 app.include_router(chat_router)
 app.include_router(quiz_router)
 app.include_router(notes_router)
+app.include_router(revision_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])

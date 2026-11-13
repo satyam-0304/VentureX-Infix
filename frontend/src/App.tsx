@@ -6,6 +6,7 @@ import { LearningWorkspace } from './pages/LearningWorkspace';
 import { DashboardView } from './pages/DashboardView';
 import { ProgressView } from './pages/ProgressView';
 import { ProfileView } from './pages/ProfileView';
+import { FlashcardsView } from './pages/FlashcardsView';
 import { AITutorDrawer } from './components/AITutor/AITutorDrawer';
 
 const AppContent: React.FC = () => {
@@ -22,6 +23,7 @@ const AppContent: React.FC = () => {
 
         {/* View Switcher */}
         {activeNavView === 'practice' && <LearningWorkspace />}
+        {activeNavView === 'flashcards' && <FlashcardsView />}
         {activeNavView === 'dashboard' && <DashboardView />}
         {activeNavView === 'learning_hub' && <DashboardView />}
         {activeNavView === 'progress' && <ProgressView />}

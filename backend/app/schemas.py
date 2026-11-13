@@ -214,3 +214,85 @@ class AuthResponse(BaseModel):
     token: str
     user: UserProfile
 
+
+# ==========================================
+# Flashcard Feature Schemas
+# ==========================================
+
+class FlashcardItem(BaseModel):
+    id: str
+    deck_id: str
+    question: str
+    answer: str
+    category: str = Field(default="Concept", description="Definition, Concept, Formula, Important Fact")
+    chapter_title: Optional[str] = None
+    timestamp_sec: float = 0.0
+    timestamp_formatted: str = "00:00"
+    confidence: str = Field(default="unreviewed", description="not_confident, somewhat_confident, very_confident, unreviewed")
+    is_bookmarked: bool = False
+    review_count: int = 0
+    last_reviewed_at: Optional[int] = None
+    order_index: int = 0
+    created_at: int = 0
+
+
+class FlashcardDeck(BaseModel):
+    id: str
+    user_id: str
+    video_id: str
+    session_id: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    card_count: int = 0
+    mastered_count: int = 0
+    created_at: int = 0
+    updated_at: int = 0
+    cards: list[FlashcardItem] = Field(default_factory=list)
+
+
+class GenerateFlashcardsRequest(BaseModel):
+    video_id: str = Field(default="demo_polymers", description="YouTube video ID or slug")
+    session_id: Optional[str] = None
+    title: Optional[str] = None
+    target_count: int = Field(default=18, ge=5, le=40, description="Target number of cards to generate (15-20 default)")
+    chapter_filter: Optional[str] = None
+
+
+class CreateCardRequest(BaseModel):
+    question: str
+    answer: str
+    category: str = "Concept"
+    chapter_title: Optional[str] = None
+    timestamp_sec: float = 0.0
+
+
+class UpdateCardRequest(BaseModel):
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    category: Optional[str] = None
+    is_bookmarked: Optional[bool] = None
+
+
+class ReviewCardRequest(BaseModel):
+    confidence: str = Field(description="not_confident, somewhat_confident, very_confident")
+
+
+class AiAssistRequest(BaseModel):
+    video_id: str
+    deck_id: Optional[str] = None
+    card_id: Optional[str] = None
+    action: str = Field(description="explain, simplify, analogy, generate_more, edit, custom_chat")
+    user_message: Optional[str] = None
+    current_question: Optional[str] = None
+    current_answer: Optional[str] = None
+    concept: Optional[str] = None
+
+
+class AiAssistResponse(BaseModel):
+    reply: str
+    suggested_question: Optional[str] = None
+    suggested_answer: Optional[str] = None
+    suggested_category: Optional[str] = None
+    generated_cards: list[CreateCardRequest] = Field(default_factory=list)
+
+

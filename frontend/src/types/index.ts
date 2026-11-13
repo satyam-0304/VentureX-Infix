@@ -113,5 +113,40 @@ export interface LearningSession {
 }
 
 export type ActiveTab = 'overview' | 'notes' | 'transcript' | 'discussion';
-export type AppNavView = 'dashboard' | 'learning_hub' | 'practice' | 'progress' | 'profile';
+export type AppNavView = 'dashboard' | 'learning_hub' | 'practice' | 'flashcards' | 'progress' | 'profile';
+
+export type FlashcardCategory = 'Definition' | 'Concept' | 'Formula' | 'Important Fact';
+export type FlashcardConfidence = 'not_confident' | 'somewhat_confident' | 'very_confident' | 'unreviewed';
+
+export interface FlashcardItem {
+  id: string;
+  deck_id: string;
+  question: string;
+  answer: string;
+  category: FlashcardCategory;
+  chapter_title?: string;
+  timestamp_sec: number;
+  timestamp_formatted: string;
+  confidence: FlashcardConfidence;
+  is_bookmarked: boolean;
+  review_count: number;
+  last_reviewed_at?: number | null;
+  order_index: number;
+  created_at: number;
+}
+
+export interface FlashcardDeck {
+  id: string;
+  user_id: string;
+  video_id: string;
+  session_id?: string;
+  title: string;
+  description?: string;
+  card_count: number;
+  mastered_count: number;
+  created_at: number;
+  updated_at: number;
+  cards: FlashcardItem[];
+}
+
 

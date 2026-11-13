@@ -1,14 +1,17 @@
 """Lurnix AI Flashcard Generation and Spaced Retention Service.
 
-Provides automatic lecture-grounded flashcard extraction from transcripts and chapters,
-confidence-based spaced repetition tracking, card management, and contextual AI tutoring.
+Provides automatic lecture-grounded flashcard extraction from complete YouTube transcripts
+and chapters across the entire video timeline (beginning, middle, end), confidence-based
+spaced retention tracking, card management, and contextual AI tutoring.
 """
 
 import time
 import secrets
 import logging
 import sqlite3
+import re
 from typing import Optional, List, Dict, Any
+from fastapi import HTTPException
 from app.schemas import (
     FlashcardItem,
     FlashcardDeck,
@@ -25,6 +28,7 @@ from app.services.sample_data import (
     get_demo_chapters,
     get_demo_video_title,
     resolve_demo_key,
+    get_demo_transcript,
     DEMO_VIDEOS,
 )
 from app.services.dynamic_cache import get_dynamic_chapters
@@ -122,7 +126,7 @@ def _seed_demo_flashcards(cur: sqlite3.Cursor):
     ))
 
     cards_data = [
-        # Chapter 1: Introduction to Polymers
+        # Chapter 1: Introduction to Polymers (Beginning)
         (
             "What is the fundamental definition of a monomer in polymer chemistry?",
             "A monomer is a small, reactive molecule that can undergo chemical reactions with other monomers to form a repeating structural unit within a high-molecular-weight polymer chain.",
@@ -164,7 +168,7 @@ def _seed_demo_flashcards(cur: sqlite3.Cursor):
             1
         ),
 
-        # Chapter 2: Addition vs Condensation Polymerization
+        # Chapter 2: Addition vs Condensation Polymerization (Early-Middle)
         (
             "What is the key mechanistic difference between addition and condensation polymerization?",
             "Addition (chain-growth) polymerization involves opening double bonds without forming any by-products. Condensation (step-growth) links bifunctional monomers with the elimination of small molecules like H2O or HCl.",
@@ -216,7 +220,7 @@ def _seed_demo_flashcards(cur: sqlite3.Cursor):
             0
         ),
 
-        # Chapter 3: Molecular Weight & Structural Architecture
+        # Chapter 3: Molecular Weight & Structural Architecture (Late-Middle)
         (
             "What is the mathematical difference between Number-Average (Mn) and Weight-Average (Mw) molecular weights?",
             "Mn = Σ(Ni·Mi) / Σ(Ni) based on mole fraction.\nMw = Σ(Ni·Mi²) / Σ(Ni·Mi) weighted toward larger molecules. Mw is always ≥ Mn in polydisperse systems.",
@@ -258,7 +262,7 @@ def _seed_demo_flashcards(cur: sqlite3.Cursor):
             0
         ),
 
-        # Chapter 4: Industrial Applications & Vulcanization
+        # Chapter 4: Industrial Applications & Vulcanization (End of Video)
         (
             "What chemical process occurs during the vulcanization of natural rubber?",
             "Sulfur is heated with polyisoprene at ~140°C in the presence of zinc oxide accelerators. Sulfur forms disulfide (-S-S-) cross-links across allylic positions, transforming sticky latex into durable, elastic rubber.",
@@ -339,7 +343,7 @@ def _seed_demo_flashcards(cur: sqlite3.Cursor):
 
 
 class FlashcardService:
-    """Core domain logic for Flashcard decks, spaced review, and AI grounding."""
+    """Core domain logic for Flashcard decks, spaced review, and full-transcript AI grounding."""
 
     @staticmethod
     def get_user_decks(user_id: str) -> List[FlashcardDeck]:
@@ -355,7 +359,6 @@ class FlashcardService:
         decks: List[FlashcardDeck] = []
 
         for r in rows:
-            # Count actual cards and mastered
             cur.execute("""
                 SELECT COUNT(*),
                        SUM(CASE WHEN confidence = 'very_confident' THEN 1 ELSE 0 END)
@@ -445,7 +448,7 @@ class FlashcardService:
 
     @staticmethod
     def get_or_create_deck_for_video(video_id: str, user_id: str, session_id: Optional[str] = None) -> FlashcardDeck:
-        """Finds existing deck for video or creates/generates a fresh one."""
+        """Finds existing deck for video or creates/generates a fresh one from the complete video transcript."""
         clean_vid = extract_youtube_id(video_id)
         conn = get_db_connection()
         cur = conn.cursor()
@@ -462,7 +465,7 @@ class FlashcardService:
             if deck and len(deck.cards) > 0:
                 return deck
 
-        # Generate fresh deck
+        # Generate fresh full-video deck
         req = GenerateFlashcardsRequest(
             video_id=clean_vid,
             session_id=session_id,
@@ -472,63 +475,78 @@ class FlashcardService:
 
     @staticmethod
     def generate_flashcards(req: GenerateFlashcardsRequest, user_id: str) -> FlashcardDeck:
-        """Automatically generates lecture-grounded flashcards from transcript and chapters."""
+        """Automatically generates lecture-grounded flashcards from the COMPLETE YouTube transcript and chapters.
+        
+        CRITICAL GUARANTEES:
+        1. Slices the ENTIRE video transcript from beginning (00:00) to end.
+        2. Proportional representation across all chapters (beginning, middle, end).
+        3. If transcript is unavailable, raises informative 422 error instead of hallucinating.
+        4. Saves deck associated with the specific video ID and user.
+        """
         clean_vid = extract_youtube_id(req.video_id)
         now_ms = int(time.time() * 1000)
         deck_id = f"deck_{clean_vid}_{secrets.token_hex(4)}"
 
-        # Resolve title and chapters
-        video_title = req.title or get_demo_video_title(clean_vid) or f"Lecture Study Deck: {clean_vid}"
-        chapters = get_demo_chapters(clean_vid) or get_dynamic_chapters(clean_vid) or []
+        # 1. Fetch the COMPLETE available transcript
+        transcript_segments = fetch_youtube_transcript(clean_vid, allow_placeholder=False)
+        if not transcript_segments or len(transcript_segments) < 2:
+            # Fallback check for demo videos
+            demo_t = get_demo_transcript(clean_vid)
+            if demo_t and len(demo_t) >= 2:
+                transcript_segments = demo_t
+            else:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Transcript is unavailable for YouTube video ({clean_vid}). Flashcards require closed captions/subtitles enabled to accurately extract lecture concepts without guessing."
+                )
 
-        # Generated cards list
+        # 2. Resolve Title & Duration from transcript
+        video_title = req.title or get_demo_video_title(clean_vid) or f"Lecture Study Deck: {clean_vid}"
+        total_duration = max(transcript_segments[-1]["start"] + transcript_segments[-1].get("duration", 0.0), 60.0)
+
+        # 3. Resolve or Partition Chapters covering 100% of the video timeline
+        chapters = get_demo_chapters(clean_vid) or get_dynamic_chapters(clean_vid) or []
+        if not chapters or len(chapters) < 2:
+            # Partition duration proportionally into 4 logical chapters
+            ch_names = [
+                "Introduction & Foundations",
+                "Core Mechanisms & Principles",
+                "Advanced Analysis & Formulations",
+                "Practical Applications & Summary",
+            ]
+            slice_dur = total_duration / 4.0
+            chapters = []
+            for i, c_name in enumerate(ch_names):
+                from app.schemas import Chapter
+                chapters.append(Chapter(
+                    id=i + 1,
+                    title=c_name,
+                    start_sec=int(i * slice_dur),
+                    end_sec=int((i + 1) * slice_dur) if i < 3 else int(total_duration),
+                    summary=f"Section {i+1} covering {c_name}."
+                ))
+
+        # 4. Divide transcript into chunks covering EVERY section without skipping
+        chapter_chunks = FlashcardService._partition_transcript_by_chapters(transcript_segments, chapters, total_duration)
+
         generated_cards_data: List[Dict[str, Any]] = []
 
-        # 1. Try Live Gemini if configured
+        # 5. Case A: Try Live Gemini Flash across the FULL video transcript
         if is_gemini_configured():
             try:
-                transcript_segments = fetch_youtube_transcript(clean_vid)
-                transcript_summary = " ".join([s.get("text", "") for s in transcript_segments[:60]])[:3000]
-
-                from app.services.gemini import get_genai_client
-                client = get_genai_client()
-                if client:
-                    prompt = f"""
-You are an expert STEM educator creating interactive study flashcards for students.
-Analyze this lecture topic: "{video_title}"
-Video Chapters: {[c.title for c in chapters]}
-Transcript excerpt: "{transcript_summary}"
-
-Generate exactly {req.target_count} high-yield, conceptually rigorous study flashcards.
-Rules:
-1. Cover Definitions, Core Concepts, Formulas/Equations, and Key Experimental Facts.
-2. Ground every question strictly in the lecture subject.
-3. Distribute timestamps evenly across the chapters.
-4. Categories must be one of: 'Definition', 'Concept', 'Formula', 'Important Fact'.
-5. Return clean JSON matching the requested structure.
-"""
-                    res = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt,
-                        config={
-                            "response_mime_type": "application/json",
-                            "temperature": 0.2,
-                        }
-                    )
-                    import json
-                    parsed = json.loads(res.text)
-                    if isinstance(parsed, list):
-                        generated_cards_data = parsed
-                    elif isinstance(parsed, dict) and "cards" in parsed:
-                        generated_cards_data = parsed["cards"]
+                generated_cards_data = FlashcardService._generate_via_gemini(
+                    video_title, total_duration, chapter_chunks, req.target_count
+                )
             except Exception as e:
-                logger.warning(f"Live Gemini flashcard generation fallback triggered: {e}")
+                logger.warning(f"Live Gemini full-video flashcard generation failed, falling back to linguistic extractor: {e}")
 
-        # 2. Grounded Fallback Generation if Gemini is offline or empty
+        # 6. Case B: Full-Transcript Grounded Linguistic Extractor (Deterministic Fallback)
         if not generated_cards_data:
-            generated_cards_data = FlashcardService._generate_heuristic_cards(clean_vid, video_title, chapters, req.target_count)
+            generated_cards_data = FlashcardService._extract_grounded_cards_from_full_transcript(
+                chapter_chunks, req.target_count
+            )
 
-        # Persist Deck & Cards into SQLite
+        # 7. Persist Deck & Cards into SQLite
         conn = get_db_connection()
         cur = conn.cursor()
 
@@ -543,7 +561,7 @@ Rules:
             clean_vid,
             req.session_id,
             video_title,
-            f"Interactive lecture flashcards for {video_title} covering {len(chapters)} key modules.",
+            f"Comprehensive study deck covering all {len(chapters)} modules of {video_title} ({format_video_time(total_duration)}).",
             len(generated_cards_data),
             0,
             now_ms,
@@ -553,11 +571,11 @@ Rules:
         created_cards: List[FlashcardItem] = []
         for idx, item in enumerate(generated_cards_data):
             c_id = f"c_{secrets.token_hex(6)}"
-            q = item.get("question", f"What is a key concept of {video_title}?")
-            a = item.get("answer", "This principle establishes the fundamental theoretical framework of the lecture.")
+            q = item["question"]
+            a = item["answer"]
             cat = item.get("category", "Concept")
-            ch = item.get("chapter_title", chapters[idx % len(chapters)].title if chapters else "Core Overview")
-            sec = float(item.get("timestamp_sec", (idx + 1) * 65.0))
+            ch = item.get("chapter_title", "General Concepts")
+            sec = float(item.get("timestamp_sec", (idx + 1) * 30.0))
             fmt_sec = format_video_time(sec)
 
             cur.execute("""
@@ -596,7 +614,7 @@ Rules:
             video_id=clean_vid,
             session_id=req.session_id,
             title=video_title,
-            description=f"Interactive lecture flashcards for {video_title}.",
+            description=f"Comprehensive study deck covering all {len(chapters)} modules of {video_title}.",
             card_count=len(created_cards),
             mastered_count=0,
             created_at=now_ms,
@@ -605,153 +623,313 @@ Rules:
         )
 
     @staticmethod
-    def _generate_heuristic_cards(video_id: str, title: str, chapters: list, target_count: int) -> List[Dict[str, Any]]:
-        """Generates lecture-grounded flashcards based on transcript & chapter distribution."""
-        demo_key = resolve_demo_key(video_id)
-        if demo_key and demo_key in DEMO_VIDEOS and demo_key == "demo_polymers":
-            # Return high-yield polymers set
-            return [
-                {
-                    "question": "What is the defining chemical structure of a polymer?",
-                    "answer": "A polymer is a macromolecule composed of many repeated sub-units (monomers) joined by covalent bonds.",
-                    "category": "Definition",
-                    "chapter_title": "Introduction to Polymers",
-                    "timestamp_sec": 45.0,
-                },
-                {
-                    "question": "What distinguishes natural polymers from synthetic polymers?",
-                    "answer": "Natural polymers occur in nature (proteins, starch, cellulose, DNA). Synthetic polymers are manufactured chemically (nylon, polyethylene, teflon).",
-                    "category": "Concept",
-                    "chapter_title": "Introduction to Polymers",
-                    "timestamp_sec": 120.0,
-                },
-                {
-                    "question": "What is the formula for calculating Degree of Polymerization (DP)?",
-                    "answer": "DP = Total Molecular Weight of Polymer / Molecular Weight of Repeating Unit.",
-                    "category": "Formula",
-                    "chapter_title": "Introduction to Polymers",
-                    "timestamp_sec": 195.0,
-                },
-                {
-                    "question": "What is the key mechanism in addition polymerization?",
-                    "answer": "Monomers with unsaturated double or triple bonds link together without producing any secondary by-products.",
-                    "category": "Concept",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 340.0,
-                },
-                {
-                    "question": "What happens during the initiation step of free-radical polymerization?",
-                    "answer": "An initiator molecule (such as benzoyl peroxide) homolytically cleaves under heat/light to produce active free radicals.",
-                    "category": "Concept",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 420.0,
-                },
-                {
-                    "question": "What by-product is typically eliminated during condensation polymerization?",
-                    "answer": "Small molecules such as water (H2O), hydrochloric acid (HCl), or methanol are eliminated during linkage.",
-                    "category": "Important Fact",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 590.0,
-                },
-                {
-                    "question": "What is the difference between Mn and Mw molecular weights?",
-                    "answer": "Mn (Number-Average) measures the arithmetic mean of chain lengths, while Mw (Weight-Average) is weighted toward heavier chains.",
-                    "category": "Formula",
-                    "chapter_title": "Molecular Weight & Structural Architecture",
-                    "timestamp_sec": 750.0,
-                },
-                {
-                    "question": "What does a Polydispersity Index (PDI) of 1.0 signify?",
-                    "answer": "A PDI of 1.0 indicates a perfectly monodisperse polymer sample where all polymer chains have identical molecular weights.",
-                    "category": "Definition",
-                    "chapter_title": "Molecular Weight & Structural Architecture",
-                    "timestamp_sec": 830.0,
-                },
-                {
-                    "question": "How does cross-linking affect polymer thermal reversibility?",
-                    "answer": "Cross-linking creates irreversible covalent bonds between chains, preventing them from melting when heated (thermosetting polymer).",
-                    "category": "Concept",
-                    "chapter_title": "Molecular Weight & Structural Architecture",
-                    "timestamp_sec": 995.0,
-                },
-                {
-                    "question": "What chemical element is used to vulcanize natural rubber?",
-                    "answer": "Sulfur is heated with natural polyisoprene to form disulfide cross-links across the polymer strands.",
-                    "category": "Important Fact",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1060.0,
-                },
-                {
-                    "question": "What is the Glass Transition Temperature (Tg)?",
-                    "answer": "The temperature threshold below which an amorphous polymer behaves as a hard, brittle glass, and above which it behaves as a rubbery flexible solid.",
-                    "category": "Definition",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1130.0,
-                },
-                {
-                    "question": "What repeating linkage defines Nylon 6,6?",
-                    "answer": "Amide linkage (-CO-NH-) formed by condensing adipic acid with hexamethylenediamine.",
-                    "category": "Formula",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1210.0,
-                },
-                {
-                    "question": "Why are thermoplastics recyclable whereas thermosets are not?",
-                    "answer": "Thermoplastics possess linear or branched chains held by secondary van der Waals forces that melt upon heating, whereas thermosets have permanent covalent 3D networks.",
-                    "category": "Concept",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1280.0,
-                },
-                {
-                    "question": "What is the function of plasticizers added to rigid PVC?",
-                    "answer": "Plasticizers embed between polymer chains, increasing free volume and molecular mobility to render brittle PVC flexible.",
-                    "category": "Important Fact",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1340.0,
-                },
-                {
-                    "question": "What is copolymerization and why is it used?",
-                    "answer": "Polymerizing two or more distinct monomers together to synthesize a material combining physical properties of both (e.g., SBR rubber).",
-                    "category": "Definition",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 650.0,
-                },
+    def _partition_transcript_by_chapters(
+        segments: List[Dict[str, Any]], chapters: list, total_duration: float
+    ) -> List[Dict[str, Any]]:
+        """Divides 100% of the transcript segments into chapter buckets covering beginning to end."""
+        chunks: List[Dict[str, Any]] = []
+
+        for i, ch in enumerate(chapters):
+            ch_start = float(ch.start_sec)
+            ch_end = float(ch.end_sec if i < len(chapters) - 1 else total_duration + 999.0)
+
+            matching_segments = [
+                s for s in segments
+                if (ch_start <= float(s.get("start", 0)) < ch_end)
             ]
 
-        # Dynamic / generic generation from chapters and title
-        cards = []
-        ch_list = chapters if chapters else []
-        categories = ["Definition", "Concept", "Formula", "Important Fact"]
-        num_cards = max(10, min(target_count, 25))
+            # If there's a gap between chapters, take nearest segments
+            if not matching_segments:
+                # Find segments closest to chapter center
+                center = (ch_start + ch_end) / 2.0
+                closest = sorted(segments, key=lambda s: abs(float(s.get("start", 0)) - center))[:5]
+                matching_segments = sorted(closest, key=lambda s: float(s.get("start", 0)))
 
-        for i in range(num_cards):
-            ch_item = ch_list[i % len(ch_list)] if ch_list else None
-            ch_name = ch_item.title if ch_item else "General Principles"
-            st_time = float(ch_item.start_sec if ch_item else i * 90)
-            cat = categories[i % len(categories)]
+            chunk_text = " ".join([s.get("text", "").strip() for s in matching_segments if s.get("text")])
 
-            if cat == "Definition":
-                q = f"What is the formal definition of {ch_name} in {title}?"
-                a = f"{ch_name} denotes the systematic foundational principle underlying {title}, establishing its functional properties and observable behavior."
-            elif cat == "Concept":
-                q = f"How does {ch_name} operate mechanistically during this lecture?"
-                a = f"It governs the energetic and structural transformations where component elements interact according to verifiable chemical and physical laws."
-            elif cat == "Formula":
-                q = f"What quantitative relationship or governing equation describes {ch_name}?"
-                a = f"Rate / Proportion = k · [Reactants]^n, where the kinetic constant k depends directly on system temperature and activation energy."
-            else:
-                q = f"What key empirical fact or practical application of {ch_name} was highlighted?"
-                a = f"This phenomenon is widely leveraged in modern industrial engineering and experimental laboratory verification for high-efficiency synthesis."
-
-            cards.append({
-                "question": q,
-                "answer": a,
-                "category": cat,
-                "chapter_title": ch_name,
-                "timestamp_sec": st_time,
+            chunks.append({
+                "chapter_id": ch.id if hasattr(ch, "id") else i + 1,
+                "chapter_title": ch.title,
+                "start_sec": ch_start,
+                "end_sec": ch_end,
+                "segments": matching_segments,
+                "full_text": chunk_text,
             })
 
+        return chunks
+
+    @staticmethod
+    def _generate_via_gemini(
+        video_title: str, total_duration: float, chunks: List[Dict[str, Any]], target_count: int
+    ) -> List[Dict[str, Any]]:
+        """Prompts Gemini Flash with the unabridged chapter chunks spanning the entire video."""
+        from app.services.gemini import get_genai_client
+        client = get_genai_client()
+        if not client:
+            return []
+
+        # Build full transcript summary with clear timeline markers
+        timeline_blocks = []
+        for c in chunks:
+            timeline_blocks.append(
+                f"### MODULE {c['chapter_id']}: \"{c['chapter_title']}\" (Time: {format_video_time(c['start_sec'])} - {format_video_time(c['end_sec'])})\n"
+                f"{c['full_text']}\n"
+            )
+
+        full_lecture_content = "\n".join(timeline_blocks)
+
+        prompt = f"""
+You are a senior STEM academic educator designing interactive study flashcards.
+Analyze this COMPLETE lecture transcript from 00:00 to {format_video_time(total_duration)}.
+Video Title: "{video_title}"
+Video Duration: {format_video_time(total_duration)} ({int(total_duration)}s)
+
+TRANSCRIPT DIVIDED BY MODULES (BEGINNING TO END):
+{full_lecture_content}
+
+CRITICAL TASK:
+Generate exactly {target_count} high-yield, academically sound study flashcards covering the ENTIRE lecture.
+
+STRICT CONSTRAINTS:
+1. FULL VIDEO COVERAGE: You MUST extract cards from every single module: the beginning (Module 1), the middle (Modules 2 & 3), and the concluding module (Module {len(chunks)}). No module may be skipped.
+2. ACCURACY & TERMINOLOGY: Preserve the instructor's exact scientific terms, chemical reactions, formulas, and kinetic mechanisms. Do NOT invent facts.
+3. EXACT TIMESTAMPS: For every card, specify "timestamp_sec" (float) matching the exact second where this concept was explained in the transcript.
+4. CATEGORIES: Choose from:
+   - "Definition": Formal definitions of terms or phenomena
+   - "Concept": Mechanisms, explanations, principles, causal relationships
+   - "Formula": Equations, mathematical relationships, reaction schemes
+   - "Important Fact": Empirical facts, industrial uses, historical discoveries, key distinctions
+5. Return JSON format:
+{{
+  "cards": [
+    {{
+      "question": "string",
+      "answer": "string",
+      "category": "Definition|Concept|Formula|Important Fact",
+      "chapter_title": "string",
+      "timestamp_sec": 123.4
+    }}
+  ]
+}}
+"""
+        res = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "temperature": 0.2,
+            }
+        )
+        import json
+        parsed = json.loads(res.text)
+        cards = parsed.get("cards", []) if isinstance(parsed, dict) else (parsed if isinstance(parsed, list) else [])
         return cards
+
+    @staticmethod
+    def _extract_grounded_cards_from_full_transcript(
+        chunks: List[Dict[str, Any]], target_count: int
+    ) -> List[Dict[str, Any]]:
+        """Extracts genuine, grounded flashcards directly from the instructor's spoken lines across all chunks."""
+        cards: List[Dict[str, Any]] = []
+        cards_per_chunk = max(2, target_count // len(chunks))
+
+        for chunk_idx, chunk in enumerate(chunks):
+            ch_title = chunk["chapter_title"]
+            segments = chunk["segments"]
+            if not segments:
+                continue
+
+            extracted_in_chunk = 0
+
+            # Pattern A: Look for definitions ("X is defined as Y", "is called", "means", "refers to")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                def_match = re.search(
+                    r"(?:^|\. )(?P<term>[A-Za-z0-9\s\-]{3,35})\s+(?:is defined as|is called|refers to|means|is characterized as)\s+(?P<def>[^\.\;\!\?]{15,160})",
+                    text,
+                    re.IGNORECASE
+                )
+                if def_match:
+                    term = def_match.group("term").strip()
+                    definition = def_match.group("def").strip()
+                    cards.append({
+                        "question": f"What is the definition of {term} in this lecture?",
+                        "answer": f"{term} {def_match.group(0).split(term)[-1].strip()}.",
+                        "category": "Definition",
+                        "chapter_title": ch_title,
+                        "timestamp_sec": t_sec,
+                    })
+                    extracted_in_chunk += 1
+
+            # Pattern B: Look for formulas / quantitative laws ("equals", "proportional to", "ratio", "divided by")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                if re.search(r"\b(formula|equation|proportional to|equals|ratio|constant|divided by|multiplied by)\b", text, re.IGNORECASE):
+                    if len(text) > 25 and not any(c["question"].endswith(text[:20]) for c in cards):
+                        cards.append({
+                            "question": f"What quantitative relationship or formula is explained in {ch_title}?",
+                            "answer": text,
+                            "category": "Formula",
+                            "chapter_title": ch_title,
+                            "timestamp_sec": t_sec,
+                        })
+                        extracted_in_chunk += 1
+
+            # Pattern C: Look for mechanisms & concepts ("mechanism", "because", "occurs when", "leads to", "initiator")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                if re.search(r"\b(mechanism|because|leads to|results in|occurs when|initiator|propagation|reaction|undergoes)\b", text, re.IGNORECASE):
+                    if len(text) > 30 and not any(c["answer"] == text for c in cards):
+                        cards.append({
+                            "question": f"How does the instructor explain the mechanism of {ch_title}?",
+                            "answer": text,
+                            "category": "Concept",
+                            "chapter_title": ch_title,
+                            "timestamp_sec": t_sec,
+                        })
+                        extracted_in_chunk += 1
+
+            # Pattern D: Look for important facts & distinctions ("important", "difference between", "distinction", "example")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                if len(text) > 35 and not any(c["answer"] == text for c in cards):
+                    cards.append({
+                        "question": f"What key principle or experimental fact is highlighted regarding {ch_title}?",
+                        "answer": text,
+                        "category": "Important Fact",
+                        "chapter_title": ch_title,
+                        "timestamp_sec": t_sec,
+                    })
+                    extracted_in_chunk += 1
+
+            # Fallback for chunk if patterns were sparse: pick spaced segments from this chunk
+            if extracted_in_chunk == 0 and segments:
+                mid_seg = segments[len(segments) // 2]
+                cards.append({
+                    "question": f"What core topic does the instructor address in {ch_title}?",
+                    "answer": mid_seg.get("text", "").strip(),
+                    "category": "Concept",
+                    "chapter_title": ch_title,
+                    "timestamp_sec": float(mid_seg.get("start", chunk["start_sec"])),
+                })
+
+        # Second pass: if we have fewer cards than target_count, extract from remaining segments across chunks
+        if len(cards) < target_count:
+            used_answers = {c["answer"] for c in cards}
+            for chunk in chunks:
+                if len(cards) >= target_count:
+                    break
+                ch_title = chunk["chapter_title"]
+                for seg in chunk["segments"]:
+                    if len(cards) >= target_count:
+                        break
+                    text = seg.get("text", "").strip()
+                    if len(text) > 25 and text not in used_answers:
+                        used_answers.add(text)
+                        cards.append({
+                            "question": f"What key principle in {ch_title} is explained by the instructor?",
+                            "answer": text,
+                            "category": "Concept",
+                            "chapter_title": ch_title,
+                            "timestamp_sec": float(seg.get("start", chunk["start_sec"])),
+                        })
+
+        return cards
+
+    @staticmethod
+    def generate_more_cards(deck_id: str, user_id: str, count: int = 5) -> FlashcardDeck:
+        """Generates additional grounded cards from the lecture transcript and appends them to existing deck without losing progress."""
+        deck = FlashcardService.get_deck_by_id(deck_id, user_id)
+        if not deck:
+            raise HTTPException(status_code=404, detail="Deck not found.")
+
+        clean_vid = deck.video_id
+        transcript = fetch_youtube_transcript(clean_vid, allow_placeholder=False) or get_demo_transcript(clean_vid)
+        if not transcript or len(transcript) < 2:
+            raise HTTPException(
+                status_code=422,
+                detail="Transcript is unavailable to generate additional cards."
+            )
+
+        total_dur = max(transcript[-1]["start"] + transcript[-1].get("duration", 0.0), 60.0)
+        chapters = get_demo_chapters(clean_vid) or get_dynamic_chapters(clean_vid) or []
+        if not chapters:
+            from app.schemas import Chapter
+            chapters = [
+                Chapter(id=1, title="Lecture Fundamentals", start_sec=0, end_sec=int(total_dur / 2)),
+                Chapter(id=2, title="Advanced Principles", start_sec=int(total_dur / 2), end_sec=int(total_dur)),
+            ]
+
+        chunks = FlashcardService._partition_transcript_by_chapters(transcript, chapters, total_dur)
+        new_candidates = FlashcardService._extract_grounded_cards_from_full_transcript(chunks, count + 4)
+
+        # Filter out questions already in deck
+        existing_questions = {c.question.lower().strip() for c in deck.cards}
+        unique_new = [c for c in new_candidates if c["question"].lower().strip() not in existing_questions][:count]
+
+        if not unique_new:
+            # Fallback: create fresh questions from different segments
+            for i in range(count):
+                seg = transcript[(i * 3 + 2) % len(transcript)]
+                unique_new.append({
+                    "question": f"Explain this lecture point discussed at {format_video_time(seg['start'])}:",
+                    "answer": seg["text"],
+                    "category": "Concept",
+                    "chapter_title": chapters[i % len(chapters)].title,
+                    "timestamp_sec": float(seg["start"]),
+                })
+
+        now_ms = int(time.time() * 1000)
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        max_order = max([c.order_index for c in deck.cards], default=-1)
+
+        for idx, item in enumerate(unique_new):
+            c_id = f"c_{secrets.token_hex(6)}"
+            q = item["question"]
+            a = item["answer"]
+            cat = item.get("category", "Concept")
+            ch = item.get("chapter_title", "Lecture Concepts")
+            sec = float(item.get("timestamp_sec", 0.0))
+            fmt_sec = format_video_time(sec)
+            order_idx = max_order + 1 + idx
+
+            cur.execute("""
+                INSERT INTO flashcards (
+                    id, deck_id, question, answer, category, chapter_title,
+                    timestamp_sec, timestamp_formatted, confidence, is_bookmarked,
+                    review_count, last_reviewed_at, order_index, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                c_id, deck_id, q, a, cat, ch, sec, fmt_sec, "unreviewed", 0, 0, None, order_idx, now_ms, now_ms
+            ))
+
+        # Update deck card count
+        cur.execute("SELECT COUNT(*) FROM flashcards WHERE deck_id = ?", (deck_id,))
+        new_cnt = cur.fetchone()[0]
+        cur.execute("UPDATE flashcard_decks SET card_count = ?, updated_at = ? WHERE id = ?", (new_cnt, now_ms, deck_id))
+        conn.commit()
+        conn.close()
+
+        refreshed = FlashcardService.get_deck_by_id(deck_id, user_id)
+        return refreshed or deck
 
     @staticmethod
     def update_card(card_id: str, user_id: str, req: UpdateCardRequest) -> Optional[FlashcardItem]:

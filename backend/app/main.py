@@ -4,6 +4,7 @@ from app.config import settings
 from app.schemas import HealthResponse
 from app.services.gemini import is_gemini_configured
 from app.routes.chat import router as chat_router
+from app.routes.quiz import router as quiz_router
 
 app = FastAPI(
     title="Lurnix Tutor API",
@@ -22,6 +23,7 @@ app.add_middleware(
 
 # Register route modules
 app.include_router(chat_router)
+app.include_router(quiz_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])

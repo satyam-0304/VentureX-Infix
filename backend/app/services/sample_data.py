@@ -1,10 +1,11 @@
 """Canonical Demo Fixtures for Lurnix.
 
-Provides pre-indexed lecture transcripts so the backend and frontend
-can execute complete end-to-end flows immediately with zero network delay.
+Provides pre-indexed lecture transcripts and canonical quizzes so the backend
+and frontend can execute complete end-to-end flows immediately with zero network delay.
 """
 
 from typing import Any
+from app.schemas import QuizQuestion
 
 DEMO_VIDEOS: dict[str, dict[str, Any]] = {
     "demo_polymers": {
@@ -32,6 +33,56 @@ DEMO_VIDEOS: dict[str, dict[str, Any]] = {
     }
 }
 
+DEMO_QUIZZES: dict[str, list[QuizQuestion]] = {
+    "demo_polymers": [
+        QuizQuestion(
+            id=101,
+            concept_tag="Free Radical Initiators",
+            question="Which substance initiates chain growth in addition polymerisation according to the instructor?",
+            options=[
+                "Benzoyl peroxide",
+                "Ziegler-Natta catalyst",
+                "Sulfuric acid",
+                "Zinc chloride",
+            ],
+            correct_idx=0,
+            explanation="The instructor demonstrates that benzoyl peroxide undergoes homolytic cleavage upon mild heating to generate free radicals that start addition polymerization.",
+            clip_start_sec=830,
+            clip_end_sec=880,
+        ),
+        QuizQuestion(
+            id=102,
+            concept_tag="Addition vs Condensation Mechanism",
+            question="What is the key distinguishing feature of condensation polymerisation like Nylon 6,6 described in the lecture?",
+            options=[
+                "It proceeds without losing any by-product molecules",
+                "It requires elimination of small molecules like water or alcohol",
+                "It only occurs with gaseous monomers like ethene",
+                "It relies exclusively on free radical chain growth",
+            ],
+            correct_idx=1,
+            explanation="The instructor emphasizes that condensation polymerisation occurs between bifunctional monomers with the loss of simple molecules such as water or alcohol.",
+            clip_start_sec=1450,
+            clip_end_sec=1500,
+        ),
+        QuizQuestion(
+            id=103,
+            concept_tag="Vulcanization of Rubber",
+            question="Why is natural rubber heated with sulfur during the vulcanization process according to the lecture?",
+            options=[
+                "To break down polymer chains into smaller monomers",
+                "To introduce sulfur cross-links between polymer chains at double bond sites",
+                "To dissolve the rubber into a liquid lubricant",
+                "To remove all carbon atoms from the polyisoprene chain",
+            ],
+            correct_idx=1,
+            explanation="Heating with sulfur forms cross-links at the reactive sites of double bonds, making rubber stiff, elastic, and non-sticky.",
+            clip_start_sec=2500,
+            clip_end_sec=2550,
+        ),
+    ]
+}
+
 
 def get_demo_transcript(video_id: str) -> list[dict[str, Any]]:
     """Retrieve transcript for a given video ID or return the primary demo polymer transcript."""
@@ -46,3 +97,18 @@ def get_demo_video_title(video_id: str) -> str:
         return DEMO_VIDEOS[video_id]["title"]
     return "Polymers Class 12 Chemistry"
 
+
+def get_demo_quiz(video_id: str) -> list[QuizQuestion]:
+    """Retrieve canonical quiz questions for a given demo video."""
+    if video_id in DEMO_QUIZZES:
+        return DEMO_QUIZZES[video_id]
+    return DEMO_QUIZZES["demo_polymers"]
+
+
+def get_demo_question(video_id: str, question_id: int) -> QuizQuestion | None:
+    """Find a specific quiz question by ID."""
+    quiz = get_demo_quiz(video_id)
+    for q in quiz:
+        if q.id == question_id:
+            return q
+    return None

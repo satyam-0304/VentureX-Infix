@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class QAMode(str, Enum):
@@ -42,6 +42,14 @@ class ChatResponse(BaseModel):
     text: Optional[str] = None
 
     model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def populate_frontend_compat(self) -> "ChatResponse":
+        if not self.text:
+            self.text = self.answer
+        if self.relatedTimestamp is None and self.citations:
+            self.relatedTimestamp = self.citations[0].start_sec
+        return self
 
 
 class RewatchLink(BaseModel):

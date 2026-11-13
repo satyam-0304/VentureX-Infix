@@ -10,11 +10,20 @@ export const AITutorDrawer: React.FC = () => {
     closeAiTutor,
     toggleAiTutor,
     sendChatMessage,
-    aiTyping
+    aiTyping,
+    seekTo
   } = useLearning();
 
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Modality modes for Explain Differently
+  const explainModes = [
+    { label: '💡 Analogy', mode: 'analogy' as const, query: 'Explain this using an everyday analogy' },
+    { label: '🔢 Step-by-Step', mode: 'step_by_step' as const, query: 'Explain this step by step' },
+    { label: '🇮🇳 Hinglish', mode: 'hinglish' as const, query: 'Explain this in conversational Hinglish' },
+    { label: '🟢 Simpler', mode: 'simpler' as const, query: 'Explain this in simpler terms' },
+  ];
 
   // Suggested prompt questions
   const suggestedPrompts = [
@@ -144,7 +153,20 @@ export const AITutorDrawer: React.FC = () => {
                         : 'bg-slate-800/80 text-slate-200 rounded-tl-sm border border-slate-700/60 shadow-sm'
                     }`}
                   >
-                    <p>{msg.text}</p>
+                    <p className="whitespace-pre-line">{msg.text}</p>
+                    
+                    {/* Clickable Grounded Citation Pill */}
+                    {!isUser && msg.relatedTimestamp !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => seekTo(msg.relatedTimestamp!)}
+                        className="mt-2 flex items-center space-x-1 px-2.5 py-1 rounded-full bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-400/40 text-indigo-300 text-[10px] font-semibold transition-all cursor-pointer shadow-sm hover:scale-[1.02]"
+                        title={`Jump player to ${Math.floor(msg.relatedTimestamp / 60)}:${String(msg.relatedTimestamp % 60).padStart(2, '0')}`}
+                      >
+                        <span>▶ Jump to Clip ({Math.floor(msg.relatedTimestamp / 60)}:{String(msg.relatedTimestamp % 60).padStart(2, '0')})</span>
+                      </button>
+                    )}
+
                     <div
                       className={`text-[9px] mt-1 ${
                         isUser ? 'text-indigo-200 text-right' : 'text-slate-400'
@@ -171,6 +193,22 @@ export const AITutorDrawer: React.FC = () => {
             )}
 
             <div ref={messagesEndRef} />
+          </div>
+
+          {/* Explain Differently Modality Selector */}
+          <div className="px-3 py-1.5 bg-slate-950/70 border-t border-slate-800 flex items-center space-x-1.5 overflow-x-auto text-[10px]">
+            <span className="text-indigo-400 shrink-0 font-semibold">Modes:</span>
+            {explainModes.map((m) => (
+              <button
+                key={m.mode}
+                type="button"
+                disabled={aiTyping}
+                onClick={() => sendChatMessage(m.query, m.mode)}
+                className="whitespace-nowrap px-2 py-0.5 rounded-full bg-slate-800 hover:bg-indigo-600/60 border border-slate-700/80 hover:border-indigo-400/50 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0 disabled:opacity-40"
+              >
+                {m.label}
+              </button>
+            ))}
           </div>
 
           {/* Suggested Quick Prompts */}

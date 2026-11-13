@@ -63,6 +63,7 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   isContextual?: boolean;
+  relatedTimestamp?: number;
 }
 
 export interface LearningSession {

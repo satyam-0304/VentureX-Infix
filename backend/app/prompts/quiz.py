@@ -40,3 +40,4 @@ Generate {num_questions} conceptual multiple-choice questions based strictly on 
 Tag each question with its concept name and include the precise clip start and end seconds.
 """
     return QUIZ_SYSTEM_INSTRUCTION, user_prompt
+

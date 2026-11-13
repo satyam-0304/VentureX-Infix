@@ -75,3 +75,4 @@ def test_submit_quiz_not_found():
     }
     response = client.post("/api/quiz/submit", json=payload)
     assert response.status_code == 404
+

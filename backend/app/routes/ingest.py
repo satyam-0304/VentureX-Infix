@@ -50,3 +50,4 @@ async def ingest_video(request: IngestRequest) -> IngestResponse:
     except Exception as e:
         logger.error(f"Failed to ingest video '{video_id}': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to ingest video: {str(e)}")
+

@@ -44,3 +44,4 @@ async def log_seek_and_check_confusion(event: SeekEventRequest) -> SeekResponse:
         )
 
     return SeekResponse(confusion_detected=False, nudge=None)
+

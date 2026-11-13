@@ -107,3 +107,4 @@ def test_telemetry_seek_confusion_nudge():
     assert res2.status_code == 200
     assert res2.json()["confusion_detected"] is False
     assert res2.json()["nudge"] is None
+

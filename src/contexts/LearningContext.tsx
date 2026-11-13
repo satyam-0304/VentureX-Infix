@@ -73,6 +73,7 @@ interface LearningContextType {
   upvoteDiscussion: (postId: string) => void;
   sendChatMessage: (text: string, mode?: 'standard' | 'simpler' | 'analogy' | 'step_by_step' | 'hinglish') => Promise<void>;
   updateSessionVideoUrl: (url: string) => void;
+  updateActiveSessionVideoData: (url: string, data: Partial<LearningSession>) => void;
   setChapters: (chapters: import('../types').Chapter[]) => void;
   resetToDefaultSessions: () => void;
 }
@@ -155,20 +156,22 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [activeSessionId]);
 
-  // Update active task notification cue based on video timestamp
+  // Update active task notification cue based on video timestamp — driven by session tasks
   useEffect(() => {
-    if (currentVideoTime < 90) {
-      setActiveCueText('Task 1 active at this timestamp');
-    } else if (currentVideoTime < 150) {
-      setActiveCueText('Task 2 active: Synthetic vs Natural');
-    } else if (currentVideoTime < 240) {
-      setActiveCueText('Task 3 active: Cross-linking mechanisms');
-    } else if (currentVideoTime < 300) {
-      setActiveCueText('Task 4 active: Real-world challenge');
-    } else {
-      setActiveCueText('Task 5 active: Lesson Revision');
+    const tasks = activeSession?.tasks ?? [];
+    if (tasks.length === 0) {
+      setActiveCueText('Interactive learning session ready');
+      return;
     }
-  }, [currentVideoTime]);
+    // Find the last task whose timestampTarget is ≤ currentVideoTime
+    let cueTask = tasks[0];
+    for (const t of tasks) {
+      if ((t.timestampTarget ?? 0) <= currentVideoTime) {
+        cueTask = t;
+      }
+    }
+    setActiveCueText(`${cueTask.title} — active`);
+  }, [currentVideoTime, activeSession]);
 
   const setActiveSessionId = (id: string) => {
     // Save current session's playback position before leaving
@@ -581,6 +584,35 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const updateActiveSessionVideoData = (url: string, data: Partial<LearningSession>) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === activeSessionId
+          ? {
+              ...s,
+              videoUrl: trimmed,
+              title: data.title || s.title,
+              courseName: data.courseName || data.title || s.courseName,
+              durationSeconds: data.durationSeconds || s.durationSeconds,
+              chapters: data.chapters !== undefined ? data.chapters : s.chapters,
+              tasks: data.tasks && data.tasks.length > 0 ? data.tasks : s.tasks,
+              notes: data.notes !== undefined ? data.notes : s.notes,
+              transcript: data.transcript !== undefined ? data.transcript : s.transcript,
+              savedPlaybackPosition: 0,
+              updatedAt: Date.now(),
+            }
+          : s
+      )
+    );
+    setCurrentVideoTime(0);
+    setVideoSeekTarget(0);
+    if (data.durationSeconds) {
+      setVideoDuration(data.durationSeconds);
+    }
+  };
+
   const setChapters = (chapters: import('../types').Chapter[]) => {
     setSessions((prev) =>
       prev.map((s) => (s.id === activeSessionId ? { ...s, chapters, updatedAt: Date.now() } : s))
@@ -649,6 +681,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         upvoteDiscussion,
         sendChatMessage,
         updateSessionVideoUrl,
+        updateActiveSessionVideoData,
         setChapters,
         resetToDefaultSessions,
       }}

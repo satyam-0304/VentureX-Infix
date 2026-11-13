@@ -11,7 +11,7 @@ import {
 import { useLearning } from '../contexts/LearningContext';
 
 export const DashboardView: React.FC = () => {
-  const { sessions, setActiveSessionId, setActiveNavView } = useLearning();
+  const { sessions, activeSession, setActiveSessionId, setActiveNavView } = useLearning();
 
   const totalTasks = sessions.reduce((acc, s) => acc + s.tasks.length, 0);
   const completedTasks = sessions.reduce(
@@ -37,8 +37,8 @@ export const DashboardView: React.FC = () => {
             Welcome back, Simona!
           </h1>
           <p className="text-xs text-slate-300 leading-relaxed">
-            You're currently studying <span className="text-indigo-300 font-semibold">Engineering Chemistry: Polymers</span>.
-            Your interactive learning checkpoint is waiting at timestamp 01:00.
+            You're currently studying <span className="text-indigo-300 font-semibold">{activeSession.courseName || activeSession.title}</span>.
+            Your interactive learning checkpoint is waiting at timestamp {activeSession.tasks?.[0]?.subtitle || '01:00'}.
           </p>
         </div>
 

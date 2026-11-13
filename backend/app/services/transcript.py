@@ -54,12 +54,22 @@ def fetch_youtube_transcript(video_id: str, allow_placeholder: bool = False) -> 
     callers can properly notify the user instead of hallucinating.
     """
     from app.services.sample_data import DEMO_VIDEOS, get_demo_transcript
+    from app.services.dynamic_cache import get_dynamic_video
 
-    # 1. Zero-latency demo fixture shortcut
+    # 1. Zero-latency demo fixture shortcut (checks DEMO_VIDEOS, YOUTUBE_TO_DEMO_MAP, and session IDs)
+    demo_transcript = get_demo_transcript(video_id)
+    if demo_transcript:
+        return demo_transcript
+
     if video_id in DEMO_VIDEOS:
         return DEMO_VIDEOS[video_id]["transcript"]
 
-    # 2. Live YouTube API extraction
+    # 2. Check dynamic runtime cache for previously ingested videos
+    dyn = get_dynamic_video(video_id)
+    if dyn and dyn.get("transcript"):
+        return dyn["transcript"]
+
+    # 3. Live YouTube API extraction
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
 
@@ -80,11 +90,6 @@ def fetch_youtube_transcript(video_id: str, allow_placeholder: bool = False) -> 
 
     except Exception as e:
         logger.warning(f"Live transcript fetch failed for {video_id}: {e}")
-
-    # 3. Demo fixture lookup
-    demo_transcript = get_demo_transcript(video_id)
-    if demo_transcript:
-        return demo_transcript
 
     if not allow_placeholder:
         logger.warning(f"No transcript found for video {video_id}")

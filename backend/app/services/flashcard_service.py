@@ -450,13 +450,14 @@ class FlashcardService:
     def get_or_create_deck_for_video(video_id: str, user_id: str, session_id: Optional[str] = None) -> FlashcardDeck:
         """Finds existing deck for video or creates/generates a fresh one from the complete video transcript."""
         clean_vid = extract_youtube_id(video_id)
+        demo_key = resolve_demo_key(clean_vid) or resolve_demo_key(video_id) or (resolve_demo_key(session_id) if session_id else None)
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             SELECT id FROM flashcard_decks
-            WHERE video_id = ? AND (user_id = ? OR user_id = 'usr_simona_01')
+            WHERE (video_id = ? OR video_id = ? OR session_id = ?) AND (user_id = ? OR user_id = 'usr_simona_01')
             ORDER BY updated_at DESC LIMIT 1
-        """, (clean_vid, user_id))
+        """, (clean_vid, demo_key or clean_vid, session_id or "", user_id))
         row = cur.fetchone()
         conn.close()
 

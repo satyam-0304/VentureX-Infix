@@ -108,3 +108,29 @@ def test_telemetry_seek_confusion_nudge():
     assert res2.json()["confusion_detected"] is False
     assert res2.json()["nudge"] is None
 
+
+def test_ingest_arbitrary_new_video_never_returns_polymers():
+    """Verify that ingesting an arbitrary YouTube video yields dynamic chapters, never Polymer fixtures."""
+    arbitrary_id = "calc_3b1b_integral_99"
+    res = client.post("/api/video/ingest", json={"youtube_url": f"https://www.youtube.com/watch?v={arbitrary_id}"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["video_id"] == arbitrary_id
+    assert len(data["chapters"]) >= 3
+
+    # CRITICAL: Verify NO Polymer topics leaked into chapters
+    chapter_titles = " ".join(ch["title"].lower() for ch in data["chapters"])
+    assert "polymer" not in chapter_titles
+    assert "benzoyl" not in chapter_titles
+    assert "vulcaniz" not in chapter_titles
+
+    # Verify quiz endpoints return dynamic questions, NOT Polymers
+    quiz_res = client.get(f"/api/video/{arbitrary_id}/quiz")
+    assert quiz_res.status_code == 200
+    quizzes = quiz_res.json()
+    assert len(quizzes) >= 1
+    quiz_text = " ".join(q["question"].lower() + " " + q["concept_tag"].lower() for q in quizzes)
+    assert "polymer" not in quiz_text
+    assert "benzoyl" not in quiz_text
+    assert "rubber" not in quiz_text
+

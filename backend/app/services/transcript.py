@@ -46,9 +46,14 @@ def extract_youtube_id(url_or_id: str) -> str:
     return clean_input
 
 
-def fetch_youtube_transcript(video_id: str) -> list[dict[str, Any]]:
-    """Retrieve transcript for a given video ID with multi-language and auto-translation fallback."""
-    from app.services.sample_data import DEMO_VIDEOS
+def fetch_youtube_transcript(video_id: str, allow_placeholder: bool = False) -> list[dict[str, Any]]:
+    """Retrieve complete transcript for a given video ID with multi-language and auto-translation fallback.
+    
+    Returns full transcript segments covering the entire video from start to finish.
+    If no transcript is available and allow_placeholder is False, returns empty list so
+    callers can properly notify the user instead of hallucinating.
+    """
+    from app.services.sample_data import DEMO_VIDEOS, get_demo_transcript
 
     # 1. Zero-latency demo fixture shortcut
     if video_id in DEMO_VIDEOS:
@@ -76,6 +81,19 @@ def fetch_youtube_transcript(video_id: str) -> list[dict[str, Any]]:
     except Exception as e:
         logger.warning(f"Live transcript fetch failed for {video_id}: {e}")
 
-    # 3. Defensive fallback: Return primary demo transcript to avoid crashing user flow
-    logger.info(f"Using default educational fixture fallback for video {video_id}")
-    return DEMO_VIDEOS["demo_polymers"]["transcript"]
+    # 3. Demo fixture lookup
+    demo_transcript = get_demo_transcript(video_id)
+    if demo_transcript:
+        return demo_transcript
+
+    if not allow_placeholder:
+        logger.warning(f"No transcript found for video {video_id}")
+        return []
+
+    logger.info(f"Generating minimal placeholder transcript for video {video_id}")
+    return [
+        {"start": 0.0, "duration": 30.0, "text": f"Lecture video ({video_id}) initialized. Interactive chapters synchronized."},
+        {"start": 30.0, "duration": 60.0, "text": "Core topic introduction and conceptual definitions."},
+        {"start": 90.0, "duration": 90.0, "text": "Detailed analysis and principle exploration."},
+        {"start": 180.0, "duration": 120.0, "text": "Worked examples and practical application summary."},
+    ]

@@ -9,6 +9,8 @@ from app.routes.notes import router as notes_router
 from app.routes.revision import router as revision_router
 from app.routes.ingest import router as ingest_router
 from app.routes.telemetry import router as telemetry_router
+from app.routes.profile import router as profile_router
+from app.routes.flashcards import router as flashcards_router
 
 app = FastAPI(
     title="Lurnix Tutor API",
@@ -32,6 +34,8 @@ app.include_router(quiz_router)
 app.include_router(notes_router)
 app.include_router(revision_router)
 app.include_router(telemetry_router)
+app.include_router(profile_router)
+app.include_router(flashcards_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])

@@ -85,7 +85,7 @@ export const LectureTabs: React.FC = () => {
               : 'text-slate-400 hover:text-slate-700 border-transparent'
           }`}
         >
-          Transcript
+          Transcript ({activeSession.transcript.length})
         </button>
 
         <button
@@ -198,34 +198,41 @@ export const LectureTabs: React.FC = () => {
       {/* TAB PANEL 3: Transcript */}
       {activeTab === 'transcript' && (
         <div id="tabPanelTranscript" className="pt-4 space-y-1.5 max-h-64 overflow-y-auto pr-1 animate-fade-in">
-          {activeSession.transcript.map((line) => {
-            const isCurrent =
-              currentVideoTime >= line.timestamp &&
-              currentVideoTime < line.timestamp + 50;
+          {activeSession.transcript.length === 0 ? (
+            <div className="text-center py-8 text-slate-400 text-xs">
+              <p className="font-semibold text-slate-500 mb-1">Synchronizing Dialogue Track</p>
+              <p>Fetching full transcript for this lecture...</p>
+            </div>
+          ) : (
+            activeSession.transcript.map((line) => {
+              const isCurrent =
+                currentVideoTime >= line.timestamp &&
+                currentVideoTime < line.timestamp + 30;
 
-            return (
-              <div
-                key={line.id}
-                className={`p-2 rounded-lg transition-all flex items-start space-x-3 ${
-                  isCurrent
-                    ? 'bg-indigo-50 border border-indigo-200 shadow-xs'
-                    : 'hover:bg-indigo-50/50'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => seekTo(line.timestamp)}
-                  className="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5 shrink-0 px-1.5 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 cursor-pointer transition-colors"
-                  title={`Jump video to ${line.formattedTime}`}
+              return (
+                <div
+                  key={line.id}
+                  className={`p-2 rounded-lg transition-all flex items-start space-x-3 ${
+                    isCurrent
+                      ? 'bg-indigo-50 border border-indigo-200 shadow-xs'
+                      : 'hover:bg-indigo-50/50'
+                  }`}
                 >
-                  {line.formattedTime}
-                </button>
-                <p className={`text-xs leading-snug ${isCurrent ? 'text-indigo-900 font-medium' : 'text-slate-700'}`}>
-                  {line.text}
-                </p>
-              </div>
-            );
-          })}
+                  <button
+                    type="button"
+                    onClick={() => seekTo(line.timestamp)}
+                    className="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5 shrink-0 px-1.5 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 cursor-pointer transition-colors"
+                    title={`Jump video to ${line.formattedTime}`}
+                  >
+                    {line.formattedTime}
+                  </button>
+                  <p className={`text-xs leading-snug ${isCurrent ? 'text-indigo-900 font-medium' : 'text-slate-700'}`}>
+                    {line.text}
+                  </p>
+                </div>
+              );
+            })
+          )}
         </div>
       )}
 

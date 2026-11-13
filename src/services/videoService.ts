@@ -50,10 +50,11 @@ class VideoService {
         const durationSec = ingestData.duration_sec || 1200;
         const chapters: Chapter[] = ingestData.chapters || [];
 
-        // Fetch notes and quizzes in parallel
-        const [notesRes, quizRes] = await Promise.allSettled([
+        // Fetch notes, quizzes, and transcript in parallel
+        const [notesRes, quizRes, transcriptRes] = await Promise.allSettled([
           fetch(`${this.apiBaseUrl}/api/video/${videoId}/notes`),
           fetch(`${this.apiBaseUrl}/api/video/${videoId}/quiz`),
+          fetch(`${this.apiBaseUrl}/api/video/${videoId}/transcript`),
         ]);
 
         let notes: Note[] = [];
@@ -73,6 +74,52 @@ class VideoService {
           tasks = this.generateDefaultTasksFromChapters(chapters);
         }
 
+        let transcript: TranscriptLine[] = [];
+        // First check if ingestData included transcript
+        if (Array.isArray(ingestData.transcript) && ingestData.transcript.length > 0) {
+          transcript = ingestData.transcript.map((item: any, idx: number) => {
+            const startSec = Math.floor(item.start ?? item.timestamp ?? 0);
+            return {
+              id: `tr-${idx}`,
+              timestamp: startSec,
+              formattedTime: this.formatTime(startSec),
+              text: item.text ?? '',
+            };
+          });
+        } else if (transcriptRes.status === 'fulfilled' && transcriptRes.value.ok) {
+          const rawTranscript = await transcriptRes.value.json();
+          if (Array.isArray(rawTranscript) && rawTranscript.length > 0) {
+            transcript = rawTranscript.map((item: any, idx: number) => {
+              const startSec = Math.floor(item.start ?? item.timestamp ?? 0);
+              return {
+                id: `tr-${idx}`,
+                timestamp: startSec,
+                formattedTime: this.formatTime(startSec),
+                text: item.text ?? '',
+              };
+            });
+          }
+        }
+
+        if (transcript.length === 0) {
+          // If transcript is still empty, synthesize initial checkpoints from chapters
+          transcript = chapters.length > 0
+            ? chapters.map((c, i) => ({
+                id: `tr-${i}`,
+                timestamp: c.start_sec,
+                formattedTime: this.formatTime(c.start_sec),
+                text: `${c.title}: ${c.summary}`,
+              }))
+            : [
+                {
+                  id: 'tr-0',
+                  timestamp: 0,
+                  formattedTime: '00:00',
+                  text: `Welcome to ${title}. Synchronized lecture session ready.`,
+                },
+              ];
+        }
+
         return {
           videoId,
           title,
@@ -81,14 +128,7 @@ class VideoService {
           chapters,
           tasks,
           notes,
-          transcript: [
-            {
-              id: 'tr-0',
-              timestamp: 0,
-              formattedTime: '00:00',
-              text: `Welcome to ${title}. Synchronized lecture session ready.`,
-            },
-          ],
+          transcript,
         };
       }
     } catch (err) {

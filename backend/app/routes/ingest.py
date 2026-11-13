@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 from app.schemas import Chapter
@@ -32,6 +33,7 @@ class IngestResponse(BaseModel):
     duration_sec: int
     cached: bool
     chapters: list[Chapter]
+    transcript: list[dict[str, Any]] = Field(default_factory=list, description="Raw transcript items with text, start, and duration")
 
 
 @router.post("/ingest", response_model=IngestResponse)
@@ -51,12 +53,14 @@ async def ingest_video(request: IngestRequest) -> IngestResponse:
             chapters = get_demo_chapters(video_id)
             demo_data = DEMO_VIDEOS[demo_key]
             duration = demo_data.get("duration_sec", 1800)
+            transcript = demo_data.get("transcript", [])
             return IngestResponse(
                 video_id=video_id,
                 title=title,
                 duration_sec=duration,
                 cached=True,
                 chapters=chapters,
+                transcript=transcript,
             )
 
         # Case 2: Already dynamically cached
@@ -70,6 +74,7 @@ async def ingest_video(request: IngestRequest) -> IngestResponse:
                 duration_sec=dyn["duration_sec"] if dyn else 1200,
                 cached=True,
                 chapters=cached_chapters,
+                transcript=dyn.get("transcript", []) if dyn else [],
             )
 
         # Case 3: Fresh external YouTube video — fetch transcript & generate real chapters
@@ -111,7 +116,29 @@ async def ingest_video(request: IngestRequest) -> IngestResponse:
             duration_sec=duration,
             cached=False,
             chapters=chapters,
+            transcript=transcript,
         )
     except Exception as e:
         logger.error(f"Failed to ingest video '{video_id}': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to ingest video: {str(e)}")
+
+
+@router.get("/{video_id}/transcript")
+async def get_video_transcript(video_id: str):
+    """Retrieve full transcript for a video (from dynamic cache, demo fixture, or live fetch)."""
+    from app.services.dynamic_cache import get_dynamic_video
+    dyn = get_dynamic_video(video_id)
+    if dyn and dyn.get("transcript"):
+        return dyn["transcript"]
+
+    from app.services.sample_data import resolve_demo_key, DEMO_VIDEOS
+    demo_key = resolve_demo_key(video_id)
+    if demo_key and demo_key in DEMO_VIDEOS:
+        return DEMO_VIDEOS[demo_key].get("transcript", [])
+
+    try:
+        transcript = fetch_youtube_transcript(video_id)
+        return transcript
+    except Exception as e:
+        logger.warning(f"Could not fetch transcript for {video_id}: {e}")
+        return []

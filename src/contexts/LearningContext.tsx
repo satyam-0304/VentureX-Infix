@@ -11,6 +11,8 @@ import {
 } from '../types';
 import { DEFAULT_SESSIONS } from '../data/defaultSessions';
 import { geminiService } from '../services/geminiService';
+import { videoService } from '../services/videoService';
+import { extractYouTubeVideoId } from '../hooks/useYouTubePlayer';
 
 interface LearningContextType {
   sessions: LearningSession[];
@@ -78,8 +80,8 @@ interface LearningContextType {
   resetToDefaultSessions: () => void;
 }
 
-const STORAGE_KEY_SESSIONS = 'lurnix_sessions_v1';
-const STORAGE_KEY_ACTIVE = 'lurnix_active_session_id_v1';
+const STORAGE_KEY_SESSIONS = 'lurnix_sessions_v2';
+const STORAGE_KEY_ACTIVE = 'lurnix_active_session_id_v2';
 
 const LearningContext = createContext<LearningContextType | undefined>(undefined);
 
@@ -155,6 +157,43 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setVideoSeekTarget(activeSession.savedPlaybackPosition || 0);
     }
   }, [activeSessionId]);
+
+  // Dynamically synchronize lecture content (chapters, transcript, notes, tasks) from backend
+  useEffect(() => {
+    if (!activeSession || !activeSession.videoUrl) return;
+
+    // If session already has a rich dynamic transcript, skip re-hydration
+    if (activeSession.transcript && activeSession.transcript.length >= 10 && activeSession.chapters && activeSession.chapters.length > 0) {
+      return;
+    }
+
+    let isSubscribed = true;
+    videoService.ingestVideo(activeSession.videoUrl)
+      .then((data) => {
+        if (!isSubscribed) return;
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== activeSessionId) return s;
+            return {
+              ...s,
+              title: data.title && !data.title.startsWith('YouTube Lecture') ? data.title : s.title,
+              durationSeconds: data.durationSec || s.durationSeconds,
+              chapters: data.chapters.length > 0 ? data.chapters : (s.chapters || []),
+              transcript: data.transcript.length > 0 ? data.transcript : (s.transcript || []),
+              notes: data.notes.length > 0 ? [...data.notes, ...(s.notes || []).filter(n => !data.notes.some(dn => dn.text === n.text))] : s.notes,
+              tasks: data.tasks.length > 0 ? data.tasks : s.tasks,
+            };
+          })
+        );
+      })
+      .catch((err) => {
+        console.warn('Auto-hydration of session failed:', err);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeSessionId, activeSession?.videoUrl]);
 
   // Update active task notification cue based on video timestamp — driven by session tasks
   useEffect(() => {
@@ -536,7 +575,15 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       const activeTask = activeSession.tasks.find((t) => t.status === 'active');
+      const nearbyLines = activeSession.transcript
+        .filter((t) => Math.abs(t.timestamp - currentVideoTime) <= 60)
+        .map((t) => t.text)
+        .join(' ');
+
+      const videoId = extractYouTubeVideoId(activeSession.videoUrl) || activeSession.code.toLowerCase() || 'demo_polymers';
+
       const payload = {
+        videoId,
         sessionTitle: activeSession.title,
         courseTopic: activeSession.topic,
         currentTimestamp: currentVideoTime,
@@ -546,6 +593,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         recentNotes: activeSession.notes.slice(0, 3).map((n) => n.text),
         userQuery: trimmed,
         mode: mode || 'standard',
+        transcriptSlice: nearbyLines || undefined,
       };
 
       const response = await geminiService.askTutor(payload);

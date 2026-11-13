@@ -1,11 +1,11 @@
 """Canonical Demo Fixtures for Lurnix.
 
-Provides pre-indexed lecture transcripts and canonical quizzes so the backend
+Provides pre-indexed lecture transcripts, chapters, notes, and canonical quizzes so the backend
 and frontend can execute complete end-to-end flows immediately with zero network delay.
 """
 
 from typing import Any
-from app.schemas import QuizQuestion
+from app.schemas import QuizQuestion, Chapter, ChapterNotes
 
 DEMO_VIDEOS: dict[str, dict[str, Any]] = {
     "demo_polymers": {
@@ -31,6 +31,101 @@ DEMO_VIDEOS: dict[str, dict[str, Any]] = {
             {"start": 2500.0, "duration": 35.0, "text": "Lastly, we cover the vulcanization of natural rubber by heating raw rubber with sulfur at 373 K to 415 K, creating sulfur cross-links."},
         ],
     }
+}
+
+DEMO_CHAPTERS: dict[str, list[Chapter]] = {
+    "demo_polymers": [
+        Chapter(
+            id=1,
+            title="Introduction & Classification by Source",
+            start_sec=0,
+            end_sec=620,
+            summary="Definition of high molecular weight macromolecules; classification into natural, semi-synthetic, and synthetic polymers.",
+        ),
+        Chapter(
+            id=2,
+            title="Addition Polymerization & Free Radical Mechanism",
+            start_sec=620,
+            end_sec=1450,
+            summary="Chain-growth polymerization through initiation with benzoyl peroxide, radical propagation on ethene, and termination.",
+        ),
+        Chapter(
+            id=3,
+            title="Condensation Polymerization & Step-Growth",
+            start_sec=1450,
+            end_sec=2200,
+            summary="Polycondensation mechanisms involving loss of simple molecules (H2O, alcohol); formation of Nylon 6,6 and cross-linked Bakelite.",
+        ),
+        Chapter(
+            id=4,
+            title="Vulcanization of Rubber & Cross-Linking",
+            start_sec=2200,
+            end_sec=3050,
+            summary="Enhancement of physical properties of natural rubber by heating with sulfur at 373-415 K to create disulfide cross-links.",
+        ),
+    ]
+}
+
+DEMO_NOTES: dict[str, list[ChapterNotes]] = {
+    "demo_polymers": [
+        ChapterNotes(
+            chapter_id=1,
+            chapter_title="Introduction & Classification by Source",
+            markdown_content="""### 1. Fundamentals of Polymers
+- **Definition:** Polymers are high molecular mass macromolecules ($10^3 - 10^7\\text{ u}$) composed of repeating monomer units.
+- **Classification by Origin:**
+  - **Natural Polymers:** Found in plants/animals (e.g., cellulose, starch, natural rubber).
+  - **Semi-Synthetic:** Chemically modified natural polymers (e.g., cellulose acetate / rayon).
+  - **Synthetic:** Man-made laboratory polymers (e.g., polythene, nylon 6,6, buna-S).""",
+            formulas=[],
+            key_takeaways=[
+                "Monomers join via covalent bonds into macromolecular chains.",
+                "Natural rubber is a cis-1,4-polyisoprene polymer.",
+            ],
+        ),
+        ChapterNotes(
+            chapter_id=2,
+            chapter_title="Addition Polymerization & Free Radical Mechanism",
+            markdown_content="""### 2. Addition (Chain-Growth) Polymerization
+Addition polymerization occurs in unsaturated monomers containing double or triple bonds without the elimination of any by-product molecules.
+
+#### Three Core Reaction Stages:
+1. **Chain Initiation:**
+   The organic initiator undergoes homolytic cleavage upon mild heating to generate active free radicals.
+   $$\\text{C}_6\\text{H}_5\\text{-CO-O-O-CO-C}_6\\text{H}_5 \\xrightarrow{\\Delta} 2 \\text{C}_6\\text{H}_5\\text{-CO-O}^\\bullet \\rightarrow 2 \\text{C}_6\\text{H}_5^\\bullet + 2\\text{CO}_2$$
+2. **Chain Propagation:**
+   The phenyl radical attacks the monomer double bond, generating a larger reactive radical that rapidly captures hundreds of monomer units:
+   $$\\text{C}_6\\text{H}_5^\\bullet + \\text{CH}_2=\\text{CH}_2 \\rightarrow \\text{C}_6\\text{H}_5\\text{-CH}_2\\text{-CH}_2^\\bullet$$
+3. **Chain Termination:**
+   Radical chains terminate either through radical combination or disproportionation.""",
+            formulas=[
+                "$$\\text{C}_6\\text{H}_5\\text{-CO-O-O-CO-C}_6\\text{H}_5 \\xrightarrow{\\Delta} 2 \\text{C}_6\\text{H}_5^\\bullet + 2\\text{CO}_2$$",
+                "$$\\text{C}_6\\text{H}_5^\\bullet + \\text{CH}_2=\\text{CH}_2 \\rightarrow \\text{C}_6\\text{H}_5\\text{-CH}_2\\text{-CH}_2^\\bullet$$",
+            ],
+            key_takeaways=[
+                "Requires unsaturated monomers like ethene or vinyl chloride.",
+                "Benzoyl peroxide serves as the vital free-radical initiator.",
+                "Chain propagation is an ultra-fast exothermic cascade.",
+            ],
+        ),
+        ChapterNotes(
+            chapter_id=3,
+            chapter_title="Condensation Polymerization & Step-Growth",
+            markdown_content="""### 3. Condensation (Step-Growth) Polymerization
+Occurs between bifunctional or polyfunctional monomers accompanied by the repeated loss of small molecules (such as $\\text{H}_2\\text{O}$ or $\\text{CH}_3\\text{OH}$).
+
+#### Canonical Example: Nylon 6,6
+Prepared by the condensation polymerization of adipic acid with hexamethylenediamine under high pressure and temperature:
+$$n\\,\\text{HOOC-(CH}_2)_4\\text{-COOH} + n\\,\\text{H}_2\\text{N-(CH}_2)_6\\text{-NH}_2 \\xrightarrow{553\\text{ K}} [\\text{-CO-(CH}_2)_4\\text{-CO-NH-(CH}_2)_6\\text{-NH-}]_n + (2n-1)\\text{H}_2\\text{O}$$""",
+            formulas=[
+                "$$n\\,\\text{HOOC-(CH}_2)_4\\text{-COOH} + n\\,\\text{H}_2\\text{N-(CH}_2)_6\\text{-NH}_2 \\xrightarrow{553\\text{ K}} [\\text{-CO-(CH}_2)_4\\text{-CO-NH-(CH}_2)_6\\text{-NH-}]_n + (2n-1)\\text{H}_2\\text{O}$$"
+            ],
+            key_takeaways=[
+                "Always eliminates small by-product molecules like water.",
+                "Nylon 6,6 has strong intermolecular hydrogen bonding giving high tensile strength.",
+            ],
+        ),
+    ]
 }
 
 DEMO_QUIZZES: dict[str, list[QuizQuestion]] = {
@@ -96,6 +191,29 @@ def get_demo_video_title(video_id: str) -> str:
     if video_id in DEMO_VIDEOS:
         return DEMO_VIDEOS[video_id]["title"]
     return "Polymers Class 12 Chemistry"
+
+
+def get_demo_chapters(video_id: str) -> list[Chapter]:
+    """Retrieve chapter boundaries for a given video."""
+    if video_id in DEMO_CHAPTERS:
+        return DEMO_CHAPTERS[video_id]
+    return DEMO_CHAPTERS["demo_polymers"]
+
+
+def get_demo_notes(video_id: str) -> list[ChapterNotes]:
+    """Retrieve structured notes for a given video."""
+    if video_id in DEMO_NOTES:
+        return DEMO_NOTES[video_id]
+    return DEMO_NOTES["demo_polymers"]
+
+
+def get_demo_chapter_notes(video_id: str, chapter_id: int) -> ChapterNotes | None:
+    """Retrieve notes for a specific chapter."""
+    all_notes = get_demo_notes(video_id)
+    for n in all_notes:
+        if n.chapter_id == chapter_id:
+            return n
+    return None
 
 
 def get_demo_quiz(video_id: str) -> list[QuizQuestion]:

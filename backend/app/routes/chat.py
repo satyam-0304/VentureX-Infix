@@ -139,12 +139,23 @@ async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
                     video_title=video_title,
                 )
 
-            return generate_structured(
+            resp = generate_structured(
                 prompt=user_prompt,
                 response_model=ChatResponse,
                 system_instruction=system_instruction,
                 temperature=0.3 if request.mode != QAMode.STANDARD else 0.2,
             )
+            if resp.not_covered:
+                resp.citations = []
+            if request.mode == QAMode.ANALOGY and "analogy" not in resp.concept_tag.lower():
+                resp.concept_tag = f"{resp.concept_tag} (Analogy)"
+            elif request.mode == QAMode.STEP_BY_STEP and "step" not in resp.concept_tag.lower():
+                resp.concept_tag = f"{resp.concept_tag} (Step-by-Step)"
+            elif request.mode == QAMode.HINGLISH and "hinglish" not in resp.concept_tag.lower():
+                resp.concept_tag = f"{resp.concept_tag} (Hinglish)"
+            elif request.mode == QAMode.SIMPLER and "simpl" not in resp.concept_tag.lower():
+                resp.concept_tag = f"{resp.concept_tag} (Simplified)"
+            return resp
 
         # 5. Fallback for offline development / test runs without API key
         return _deterministic_mock_response(

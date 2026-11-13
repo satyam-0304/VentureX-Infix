@@ -140,3 +140,4 @@ def generate_default_notes_for_chapters(video_id: str, chapters: list[Chapter]) 
             )
         )
     return notes
+

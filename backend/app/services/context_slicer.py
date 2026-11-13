@@ -80,3 +80,4 @@ def format_transcript_slice(slice_items: list[dict[str, Any]]) -> str:
         lines.append(f"[{label}] {text}")
 
     return "\n".join(lines)
+

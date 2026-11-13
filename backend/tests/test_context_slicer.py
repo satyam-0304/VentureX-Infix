@@ -63,3 +63,4 @@ def test_format_transcript_slice(sample_polymer_transcript):
     
     assert "[14:05] Benzoyl peroxide breaks homolytically" in formatted
     assert "[14:30] These radicals attack the monomer double bond." in formatted
+

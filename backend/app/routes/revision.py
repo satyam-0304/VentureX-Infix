@@ -38,3 +38,4 @@ async def get_rapid_revision_cheat_sheet(video_id: str):
 
     # Fallback to pre-indexed high-yield revision
     return get_demo_revision(video_id)
+

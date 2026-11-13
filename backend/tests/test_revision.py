@@ -33,3 +33,4 @@ def test_get_rapid_revision_cheat_sheet():
     assert len(formulas) >= 3
     assert any("$$" in f for f in formulas)
     assert any("C}_6\\text{H}_5" in f or "HOOC" in f for f in formulas)
+

@@ -38,3 +38,4 @@ Please generate a high-yield 10-minute rapid revision cheat sheet for this lectu
 - A concise LaTeX formula cheat sheet.
 """
     return REVISION_SYSTEM_INSTRUCTION, user_prompt
+

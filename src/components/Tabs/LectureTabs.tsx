@@ -206,17 +206,20 @@ export const LectureTabs: React.FC = () => {
             return (
               <div
                 key={line.id}
-                onClick={() => seekTo(line.timestamp)}
-                className={`p-2 rounded-lg cursor-pointer transition-all flex items-start space-x-3 ${
+                className={`p-2 rounded-lg transition-all flex items-start space-x-3 ${
                   isCurrent
                     ? 'bg-indigo-50 border border-indigo-200 shadow-xs'
                     : 'hover:bg-indigo-50/50'
                 }`}
-                title={`Jump to ${line.formattedTime}`}
               >
-                <span className="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => seekTo(line.timestamp)}
+                  className="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5 shrink-0 px-1.5 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 cursor-pointer transition-colors"
+                  title={`Jump video to ${line.formattedTime}`}
+                >
                   {line.formattedTime}
-                </span>
+                </button>
                 <p className={`text-xs leading-snug ${isCurrent ? 'text-indigo-900 font-medium' : 'text-slate-700'}`}>
                   {line.text}
                 </p>

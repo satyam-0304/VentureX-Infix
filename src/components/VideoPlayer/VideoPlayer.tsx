@@ -52,6 +52,11 @@ const VideoPlayerInternal: React.FC = () => {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+
+  // Scrubber drag / slide state for smooth real-time timeline scrubbing
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubPreviewTime, setScrubPreviewTime] = useState<number | null>(null);
 
   // URL modal state for loading educational YouTube videos
   const [showUrlModal, setShowUrlModal] = useState(false);
@@ -71,6 +76,51 @@ const VideoPlayerInternal: React.FC = () => {
   const handleSeek = (targetSeconds: number) => {
     confusion.recordSeek(currentVideoTime, targetSeconds);
     seekTo(targetSeconds);
+    if (!isYouTube && videoRef.current) {
+      videoRef.current.currentTime = targetSeconds;
+    }
+  };
+
+  // Helper to calculate seconds from a clientX click/drag event on the scrubber
+  const calculateTimeFromClientX = (clientX: number): number => {
+    if (!timelineRef.current) return 0;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const clickX = clientX - rect.left;
+    const fraction = Math.max(0, Math.min(1, clickX / rect.width));
+    return fraction * (videoDuration || 1110);
+  };
+
+  // Interactive Drag & Slide Mouse Handler on Timeline Scrubber
+  const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsScrubbing(true);
+    const targetSeconds = calculateTimeFromClientX(e.clientX);
+    setScrubPreviewTime(targetSeconds);
+    handleSeek(targetSeconds);
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const liveSeconds = calculateTimeFromClientX(moveEvent.clientX);
+      setScrubPreviewTime(liveSeconds);
+
+      // Continuously update playback position live as the user slides
+      if (!isYouTube && videoRef.current) {
+        videoRef.current.currentTime = liveSeconds;
+        updateVideoProgress(liveSeconds, videoRef.current.duration || videoDuration);
+      } else if (isYouTube) {
+        seekTo(liveSeconds);
+      }
+    };
+
+    const handleMouseUp = (upEvent: MouseEvent) => {
+      const finalSeconds = calculateTimeFromClientX(upEvent.clientX);
+      handleSeek(finalSeconds);
+      setIsScrubbing(false);
+      setScrubPreviewTime(null);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
   // Sync seek requests for HTML5 video
@@ -125,19 +175,12 @@ const VideoPlayerInternal: React.FC = () => {
   }, [togglePlayPause]);
 
   const handleHtml5TimeUpdate = () => {
+    if (isScrubbing) return;
     if (videoRef.current) {
       const cur = videoRef.current.currentTime;
       const dur = videoRef.current.duration || videoDuration || 1110;
       updateVideoProgress(cur, dur);
     }
-  };
-
-  const handleScrubberClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const fraction = Math.max(0, Math.min(1, clickX / rect.width));
-    const targetSeconds = fraction * (videoDuration || 1110);
-    handleSeek(targetSeconds);
   };
 
   const toggleFullscreen = () => {
@@ -156,20 +199,30 @@ const VideoPlayerInternal: React.FC = () => {
     return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const progressPercent = videoDuration > 0 ? (currentVideoTime / videoDuration) * 100 : 0;
+  const effectiveTime = isScrubbing && scrubPreviewTime !== null ? scrubPreviewTime : currentVideoTime;
+  const progressPercent = videoDuration > 0 ? (effectiveTime / videoDuration) * 100 : 0;
 
-  // Closed caption subtitle text computed based on timestamp
-  const getCaptionText = () => {
-    if (currentVideoTime < 90) {
-      return '"Polymers are formed by repeating monomer units that establish covalent bonds."';
-    } else if (currentVideoTime < 150) {
-      return '"Natural polymers such as cellulose differ in synthesis compared to polyamides."';
-    } else if (currentVideoTime < 240) {
-      return '"Cross-linking forms covalent bridges that alter viscoelasticity."';
-    } else if (currentVideoTime < 300) {
-      return '"In modern biomaterials, smart polymers respond dynamically to pH and temperature."';
+  // Closed caption subtitle dynamically synchronized with the video being played and current timestamp
+  const getDynamicCaptionText = () => {
+    const transcript = activeSession.transcript;
+    if (transcript && transcript.length > 0) {
+      for (let i = 0; i < transcript.length; i++) {
+        const line = transcript[i];
+        const nextLine = transcript[i + 1];
+        const endTime = nextLine ? nextLine.timestamp : line.timestamp + 30;
+        if (effectiveTime >= line.timestamp && effectiveTime < endTime) {
+          return `"${line.text}"`;
+        }
+      }
+      if (effectiveTime < transcript[0].timestamp) {
+        return `"${activeSession.title} — Introduction"`;
+      }
+      const lastLine = transcript[transcript.length - 1];
+      if (effectiveTime >= lastLine.timestamp) {
+        return `"${lastLine.text}"`;
+      }
     }
-    return '"Synthetic macromolecules provide high strength-to-weight ratios in aerospace components."';
+    return `"${activeSession.title}: Core principles and applications in ${activeSession.topic}."`;
   };
 
   // Handle loading a new YouTube video URL
@@ -213,7 +266,7 @@ const VideoPlayerInternal: React.FC = () => {
         {isYouTube ? (
           <YouTubePlayer
             videoUrlOrId={activeSession.videoUrl}
-            initialTime={currentVideoTime}
+            initialTime={activeSession.savedPlaybackPosition || 0}
             isPlaying={isPlaying}
             playbackSpeed={playbackSpeed}
             volume={volume}
@@ -221,7 +274,9 @@ const VideoPlayerInternal: React.FC = () => {
             seekTarget={videoSeekTarget}
             onClearSeekTarget={clearSeekTarget}
             onTimeUpdate={(cur, dur) => {
-              updateVideoProgress(cur, dur > 0 ? dur : videoDuration);
+              if (!isScrubbing) {
+                updateVideoProgress(cur, dur > 0 ? dur : videoDuration);
+              }
             }}
             onPlayStateChange={(playing) => {
               setIsPlaying(playing);
@@ -234,15 +289,17 @@ const VideoPlayerInternal: React.FC = () => {
           <video
             ref={videoRef}
             id="lectureVideo"
+            src={activeSession.videoUrl}
             className="w-full h-full object-cover cursor-pointer"
             playsInline
             poster={activeSession.posterUrl}
-            preload="metadata"
+            preload="auto"
             onTimeUpdate={handleHtml5TimeUpdate}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
             onClick={togglePlayPause}
             onEnded={() => setIsPlaying(false)}
           >
-            <source src={activeSession.videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         )}
@@ -310,7 +367,7 @@ const VideoPlayerInternal: React.FC = () => {
               id="captionsText"
               className="inline-block bg-black/75 backdrop-blur-sm text-white px-3 py-1 rounded text-xs tracking-wide shadow-md"
             >
-              {getCaptionText()}
+              {getDynamicCaptionText()}
             </p>
           </div>
         )}
@@ -345,9 +402,10 @@ const VideoPlayerInternal: React.FC = () => {
         <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-slate-950/95 via-slate-900/80 to-transparent flex flex-col space-y-2 text-white z-10">
           {/* Timeline Scrubber Bar with milestone marks */}
           <div
+            ref={timelineRef}
             id="timelineContainer"
-            onClick={handleScrubberClick}
-            className="relative w-full h-2 bg-white/20 hover:h-2.5 rounded-full cursor-pointer flex items-center transition-all group/scrub"
+            onMouseDown={handleTimelineMouseDown}
+            className="relative w-full h-2.5 bg-white/20 hover:h-3 rounded-full cursor-pointer flex items-center transition-all group/scrub"
           >
             {/* Played Progress Bar */}
             <div
@@ -407,7 +465,7 @@ const VideoPlayerInternal: React.FC = () => {
 
               {/* Time Display */}
               <span id="timeDisplay" className="font-mono text-slate-300 font-medium">
-                {formatTime(currentVideoTime)} / {formatTime(videoDuration)}
+                {formatTime(effectiveTime)} / {formatTime(videoDuration)}
               </span>
 
               {/* Volume Control */}

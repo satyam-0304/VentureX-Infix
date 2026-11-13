@@ -10,9 +10,13 @@ import {
   Edit3, 
   Check, 
   X,
-  Sparkles
+  Sparkles,
+  Youtube,
+  Link2,
+  Loader2
 } from 'lucide-react';
 import { useLearning } from '../../contexts/LearningContext';
+import { videoService, IngestedVideoData } from '../../services/videoService';
 
 export const SessionSidebar: React.FC = () => {
   const {
@@ -35,8 +39,12 @@ export const SessionSidebar: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // New Session form state
+  const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseAbbr, setNewCourseAbbr] = useState('');
+  const [isIngesting, setIsIngesting] = useState(false);
+  const [ingestStatus, setIngestStatus] = useState<string | null>(null);
+  const [ingestedData, setIngestedData] = useState<IngestedVideoData | null>(null);
 
   const filteredSessions = sessions.filter(
     (s) =>
@@ -72,13 +80,71 @@ export const SessionSidebar: React.FC = () => {
     }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newCourseName.trim()) {
-      createSession(newCourseName.trim(), newCourseAbbr.trim());
-      setNewCourseName('');
-      setNewCourseAbbr('');
+  const handleUrlBlurOrAnalyze = async (urlToAnalyze?: string) => {
+    const url = (urlToAnalyze !== undefined ? urlToAnalyze : newVideoUrl).trim();
+    if (!url) return;
+    setIsIngesting(true);
+    setIngestStatus('Analyzing YouTube lecture & synchronizing chapters...');
+    try {
+      const data = await videoService.ingestVideo(url);
+      setIngestedData(data);
+      if (!newCourseName.trim() || newCourseName === 'Interactive YouTube Lecture') {
+        setNewCourseName(data.title);
+      }
+      if (!newCourseAbbr.trim()) {
+        const words = data.title.split(' ');
+        const code = words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : data.title.slice(0, 2).toUpperCase();
+        setNewCourseAbbr(code);
+      }
+      setIngestStatus(`✓ Found ${data.chapters.length} chapters & ${data.tasks.length} learning checkpoints!`);
+    } catch (e) {
+      setIngestStatus('Video ready.');
+    } finally {
+      setIsIngesting(false);
     }
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedUrl = newVideoUrl.trim();
+    const trimmedName = newCourseName.trim();
+
+    if (!trimmedUrl && !trimmedName) return;
+
+    let finalData = ingestedData;
+    if (trimmedUrl && !finalData) {
+      setIsIngesting(true);
+      try {
+        finalData = await videoService.ingestVideo(trimmedUrl);
+      } catch (err) {
+        console.warn('Ingestion failed on submit', err);
+      } finally {
+        setIsIngesting(false);
+      }
+    }
+
+    const title = trimmedName || finalData?.title || 'Interactive YouTube Lecture';
+    const code = (newCourseAbbr.trim() || title.slice(0, 2)).toUpperCase();
+
+    createSession(
+      title,
+      code,
+      title.split(' ')[0],
+      trimmedUrl || 'https://www.youtube.com/watch?v=k38j3pG6KXY',
+      finalData ? {
+        durationSeconds: finalData.durationSec,
+        chapters: finalData.chapters,
+        tasks: finalData.tasks,
+        notes: finalData.notes,
+        transcript: finalData.transcript,
+      } : undefined
+    );
+
+    setNewVideoUrl('');
+    setNewCourseName('');
+    setNewCourseAbbr('');
+    setIngestStatus(null);
+    setIngestedData(null);
   };
 
   return (
@@ -332,7 +398,87 @@ export const SessionSidebar: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-3">
+            <form onSubmit={handleCreateSubmit} className="space-y-3.5">
+              {/* YouTube Video URL Input */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span className="flex items-center space-x-1.5">
+                    <Youtube className="w-3.5 h-3.5 text-red-500" />
+                    <span>YouTube Video URL or ID</span>
+                  </span>
+                  <span className="text-[10px] text-indigo-600 font-normal">Auto-generates chapters</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newVideoUrl}
+                    onChange={(e) => {
+                      setNewVideoUrl(e.target.value);
+                      setIngestStatus(null);
+                    }}
+                    onBlur={() => handleUrlBlurOrAnalyze()}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full text-xs p-2.5 pl-8 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                    autoFocus
+                  />
+                  <Link2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 pointer-events-none" />
+                  {isIngesting && (
+                    <Loader2 className="w-3.5 h-3.5 text-indigo-600 absolute right-3 top-3 animate-spin pointer-events-none" />
+                  )}
+                </div>
+
+                {/* Status Indicator */}
+                {ingestStatus && (
+                  <p className={`text-[10px] mt-1 font-medium ${ingestStatus.includes('✓') ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                    {ingestStatus}
+                  </p>
+                )}
+              </div>
+
+              {/* Quick Academic Demo Presets */}
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 space-y-1.5">
+                <span className="text-[10px] font-semibold text-slate-500 block">Quick Academic Demos:</span>
+                <div className="grid grid-cols-3 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = 'https://www.youtube.com/watch?v=k38j3pG6KXY';
+                      setNewVideoUrl(url);
+                      handleUrlBlurOrAnalyze(url);
+                    }}
+                    className="py-1 px-1.5 rounded-md bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-[10px] font-semibold text-slate-700 hover:text-indigo-700 text-center truncate transition-colors cursor-pointer shadow-xs"
+                    title="Polymers & Macromolecules"
+                  >
+                    🧪 Polymers
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = 'https://www.youtube.com/watch?v=aircAruvnKk';
+                      setNewVideoUrl(url);
+                      handleUrlBlurOrAnalyze(url);
+                    }}
+                    className="py-1 px-1.5 rounded-md bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 text-[10px] font-semibold text-slate-700 hover:text-purple-700 text-center truncate transition-colors cursor-pointer shadow-xs"
+                    title="Neural Networks & Backpropagation"
+                  >
+                    🧠 Neural Nets
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = 'https://www.youtube.com/watch?v=bHTqg7nQ2iE';
+                      setNewVideoUrl(url);
+                      handleUrlBlurOrAnalyze(url);
+                    }}
+                    className="py-1 px-1.5 rounded-md bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 text-[10px] font-semibold text-slate-700 hover:text-cyan-700 text-center truncate transition-colors cursor-pointer shadow-xs"
+                    title="Electromagnetic Induction"
+                  >
+                    ⚡ Physics
+                  </button>
+                </div>
+              </div>
+
+              {/* Course Name */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Course or Lecture Name
@@ -341,13 +487,13 @@ export const SessionSidebar: React.FC = () => {
                   type="text"
                   value={newCourseName}
                   onChange={(e) => setNewCourseName(e.target.value)}
-                  placeholder="e.g. Quantum Computing"
+                  placeholder="e.g. Engineering Chemistry"
                   className="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-600"
-                  autoFocus
                   required
                 />
               </div>
 
+              {/* Code */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Abbreviation (2 Letters)
@@ -357,27 +503,33 @@ export const SessionSidebar: React.FC = () => {
                   value={newCourseAbbr}
                   onChange={(e) => setNewCourseAbbr(e.target.value.toUpperCase())}
                   maxLength={2}
-                  placeholder="QC"
+                  placeholder="EC"
                   className="w-full uppercase text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-600 font-bold tracking-wider"
                 />
-                <span className="text-[10px] text-slate-400 mt-0.5 block">
-                  Leave blank to auto-generate from the first 2 letters.
-                </span>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-3">
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeNewSessionModal}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 shadow transition-colors"
+                  disabled={isIngesting || (!newCourseName.trim() && !newVideoUrl.trim())}
+                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-md transition-colors cursor-pointer flex items-center space-x-1.5"
                 >
-                  Create Session
+                  {isIngesting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin pointer-events-none" />
+                      <span>Ingesting...</span>
+                    </>
+                  ) : (
+                    <span>Create Session</span>
+                  )}
                 </button>
               </div>
             </form>

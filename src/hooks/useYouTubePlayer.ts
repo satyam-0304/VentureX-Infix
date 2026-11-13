@@ -8,6 +8,17 @@ export function extractYouTubeVideoId(urlOrId: string): string | null {
   if (!urlOrId) return null;
   const trimmed = urlOrId.trim();
 
+  // Known demo slug mappings to verified academic YouTube videos
+  const demoMappings: Record<string, string> = {
+    demo_polymers: 'k38j3pG6KXY', // Polymers & Macromolecules (Chemistry)
+    demo_neural_nets: 'aircAruvnKk', // Neural Networks & Gradient Descent (CS)
+    demo_electromagnetism: 'bHTqg7nQ2iE', // Electromagnetic Induction (Physics)
+  };
+
+  if (demoMappings[trimmed]) {
+    return demoMappings[trimmed];
+  }
+
   // If already an 11-character ID
   if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
     return trimmed;
@@ -18,6 +29,12 @@ export function extractYouTubeVideoId(urlOrId: string): string | null {
   const match = trimmed.match(regExp);
   if (match && match[1]) {
     return match[1];
+  }
+
+  // Also check if URL contains a demo slug in v= query parameter
+  const demoUrlMatch = trimmed.match(/[?&]v=(demo_[a-zA-Z0-9_]+)/);
+  if (demoUrlMatch && demoMappings[demoUrlMatch[1]]) {
+    return demoMappings[demoUrlMatch[1]];
   }
 
   return null;

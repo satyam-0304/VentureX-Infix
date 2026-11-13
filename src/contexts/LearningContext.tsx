@@ -6,7 +6,8 @@ import {
   ActiveTab, 
   AppNavView, 
   ChatMessage, 
-  DiscussionPost 
+  DiscussionPost,
+  ActivityTask 
 } from '../types';
 import { DEFAULT_SESSIONS } from '../data/defaultSessions';
 import { geminiService } from '../services/geminiService';
@@ -34,7 +35,13 @@ interface LearningContextType {
 
   // Actions
   setActiveSessionId: (id: string) => void;
-  createSession: (courseName: string, code: string, topic?: string) => void;
+  createSession: (
+    courseName: string,
+    code: string,
+    topic?: string,
+    videoUrl?: string,
+    extraData?: Partial<LearningSession>
+  ) => void;
   renameSession: (id: string, newTitle: string) => void;
   deleteSession: (id: string) => boolean;
   updateVideoProgress: (time: number, duration?: number) => void;
@@ -171,11 +178,39 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveSessionIdState(id);
   };
 
-  const createSession = (courseName: string, code: string, topic?: string) => {
+  const createSession = (
+    courseName: string,
+    code: string,
+    topic?: string,
+    videoUrl?: string,
+    extraData?: Partial<LearningSession>
+  ) => {
     const trimmedTitle = courseName.trim();
     if (!trimmedTitle) return;
     const finalCode = (code.trim() || trimmedTitle.slice(0, 2)).toUpperCase();
     const finalTopic = topic?.trim() || trimmedTitle.split(' ')[0];
+    const finalVideoUrl = videoUrl?.trim() || 'https://www.youtube.com/watch?v=k38j3pG6KXY';
+
+    const defaultTasks: ActivityTask[] = [
+      {
+        id: `task-${Date.now()}-1`,
+        stepNumber: 1,
+        title: 'Understanding Check',
+        subtitle: 'Knowledge Retrieval',
+        timestampTarget: 30,
+        status: 'active',
+        type: 'mcq',
+        question: `What is the primary foundation of ${trimmedTitle}?`,
+        options: [
+          { id: 'opt-1', label: `Fundamental conceptual principles of ${finalTopic}.`, isCorrect: true },
+          { id: 'opt-2', label: 'Arbitrary unrelated empirical assertions.', isCorrect: false },
+          { id: 'opt-3', label: 'Isolated unverified hypothesis.', isCorrect: false }
+        ],
+        explanation: `Systematic foundations in ${trimmedTitle} emphasize rigorous verifiable principles.`,
+        selectedOptionId: undefined,
+        answeredCorrectly: false
+      }
+    ];
 
     const newSession: LearningSession = {
       id: `session-${Date.now()}`,
@@ -185,46 +220,28 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       topic: finalTopic,
       lessonTitle: `Introduction to ${trimmedTitle}`,
       lessonNumber: 'Video Lesson 01',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      posterUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
-      durationSeconds: 900,
+      videoUrl: finalVideoUrl,
+      posterUrl: extraData?.posterUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
+      durationSeconds: extraData?.durationSeconds || 900,
       savedPlaybackPosition: 0,
-      instructor: 'Professor Vance',
+      instructor: extraData?.instructor || 'AI Lecture Instructor',
       rating: 5.0,
       reviewCount: 1,
-      objectives: [
+      objectives: extraData?.objectives || [
         `Core principles of ${trimmedTitle}`,
         `Practical applications in engineering`,
         `Synthesizing key frameworks`
       ],
-      vocabulary: [
+      vocabulary: extraData?.vocabulary || [
         { term: finalTopic },
         { term: 'Methodology' },
         { term: 'Analysis' }
       ],
-      tasks: [
-        {
-          id: `task-${Date.now()}-1`,
-          stepNumber: 1,
-          title: 'Understanding Check',
-          subtitle: 'Knowledge Retrieval',
-          timestampTarget: 30,
-          status: 'active',
-          type: 'mcq',
-          question: `What is the primary foundation of ${trimmedTitle}?`,
-          options: [
-            { id: 'opt-1', label: `Fundamental conceptual principles of ${finalTopic}.`, isCorrect: true },
-            { id: 'opt-2', label: 'Arbitrary unrelated empirical assertions.', isCorrect: false },
-            { id: 'opt-3', label: 'Isolated unverified hypothesis.', isCorrect: false }
-          ],
-          explanation: `Systematic foundations in ${trimmedTitle} emphasize rigorous verifiable principles.`,
-          selectedOptionId: undefined,
-          answeredCorrectly: false
-        }
-      ],
-      notes: [],
+      chapters: extraData?.chapters || [],
+      tasks: extraData?.tasks && extraData.tasks.length > 0 ? extraData.tasks : defaultTasks,
+      notes: extraData?.notes || [],
       bookmarks: [],
-      transcript: [
+      transcript: extraData?.transcript && extraData.transcript.length > 0 ? extraData.transcript : [
         { id: 'tr-0', timestamp: 0, formattedTime: '00:00', text: `Welcome to ${trimmedTitle}. In this lesson we establish the core concepts.` }
       ],
       discussions: [],
@@ -232,7 +249,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         {
           id: `msg-${Date.now()}`,
           sender: 'ai',
-          text: `Welcome to your new session on ${trimmedTitle}! I'm your AI tutor. Ask any questions as you watch.`,
+          text: `Welcome to your new session on ${trimmedTitle}! I'm your grounded AI tutor. Ask any questions as you watch.`,
           timestamp: 'Just now'
         }
       ],
@@ -241,6 +258,11 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionIdState(newSession.id);
+    setCurrentVideoTime(0);
+    setVideoSeekTarget(0);
+    if (newSession.durationSeconds) {
+      setVideoDuration(newSession.durationSeconds);
+    }
     setIsNewSessionModalOpen(false);
   };
 

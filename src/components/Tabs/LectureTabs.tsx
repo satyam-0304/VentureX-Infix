@@ -5,7 +5,9 @@ import {
   Trash2, 
   Clock, 
   Send, 
-  ThumbsUp
+  ThumbsUp,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 import { useLearning } from '../../contexts/LearningContext';
 import { formatVideoTime } from '../../utils/timeFormat';
@@ -20,7 +22,8 @@ export const LectureTabs: React.FC = () => {
     addNote,
     deleteNote,
     postDiscussion,
-    upvoteDiscussion
+    upvoteDiscussion,
+    setActiveNavView
   } = useLearning();
 
   const [noteText, setNoteText] = useState('');
@@ -122,6 +125,26 @@ export const LectureTabs: React.FC = () => {
             explores {activeSession.title.toLowerCase()}, examining structural relationships,
             bonding mechanics, and functional material applications.
           </p>
+
+          {/* Flashcards Call-to-Action Card */}
+          <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-white p-3.5 rounded-2xl border border-indigo-100 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                <Layers className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900">Study Lecture Flashcards</h4>
+                <p className="text-[11px] text-slate-500">Master definitions, formulas, and concepts from this video</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveNavView('flashcards')}
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1"
+            >
+              <span>Practice Deck</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {/* Key Objectives Grid */}
           <div>

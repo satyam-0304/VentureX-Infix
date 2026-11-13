@@ -13,7 +13,8 @@ import {
   Sparkles,
   Youtube,
   Link2,
-  Loader2
+  Loader2,
+  Layers
 } from 'lucide-react';
 import { useLearning } from '../../contexts/LearningContext';
 import { videoService, IngestedVideoData } from '../../services/videoService';
@@ -368,6 +369,15 @@ export const SessionSidebar: React.FC = () => {
               <Moon className="w-3.5 h-3.5 pointer-events-none" />
             </button>
           </div>
+
+          {/* Flashcards Trigger */}
+          <button
+            onClick={() => setActiveNavView('flashcards')}
+            className="w-8 h-8 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-slate-800/80 flex items-center justify-center transition-colors cursor-pointer"
+            title="Study AI Flashcards"
+          >
+            <Layers className="w-4 h-4 pointer-events-none" />
+          </button>
 
           {/* Settings Trigger -> Open Profile & Account Settings */}
           <button

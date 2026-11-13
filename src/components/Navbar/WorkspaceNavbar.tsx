@@ -18,8 +18,8 @@ export const WorkspaceNavbar: React.FC = () => {
 
   const navItems: { id: AppNavView; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'learning_hub', label: 'Learning Hub' },
-    { id: 'practice', label: 'Practice' },
+    { id: 'practice', label: 'Lecture' },
+    { id: 'flashcards', label: 'Flashcards' },
     { id: 'progress', label: 'Progress' }
   ];
 

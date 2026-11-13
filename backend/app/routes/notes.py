@@ -30,3 +30,4 @@ async def get_single_chapter_notes(video_id: str, chapter_id: int):
             detail=f"Notes for chapter ID {chapter_id} in video '{video_id}' not found.",
         )
     return notes
+

@@ -34,3 +34,4 @@ Please generate comprehensive, structured study notes for this chapter:
 - 3 to 5 rapid-review key takeaways.
 """
     return NOTES_SYSTEM_INSTRUCTION, user_prompt
+

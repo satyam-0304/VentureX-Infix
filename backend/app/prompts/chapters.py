@@ -39,3 +39,4 @@ FULL LECTURE TRANSCRIPT (Sampled across timestamps):
 Please divide this lecture into logical study chapters with accurate start and end seconds.
 """
     return CHAPTERING_SYSTEM_INSTRUCTION, user_prompt
+

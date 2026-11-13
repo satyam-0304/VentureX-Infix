@@ -51,3 +51,4 @@ def test_get_single_chapter_notes_not_found():
     """Verify non-existent chapter returns 404."""
     response = client.get("/api/video/demo_polymers/notes/9999")
     assert response.status_code == 404
+

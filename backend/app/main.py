@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.schemas import HealthResponse
 from app.services.gemini import is_gemini_configured
+from app.routes.chat import router as chat_router
 
 app = FastAPI(
     title="Lurnix Tutor API",
@@ -18,6 +19,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register route modules
+app.include_router(chat_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])

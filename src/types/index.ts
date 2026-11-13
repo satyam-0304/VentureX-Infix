@@ -113,5 +113,5 @@ export interface LearningSession {
 }
 
 export type ActiveTab = 'overview' | 'notes' | 'transcript' | 'discussion';
-export type AppNavView = 'dashboard' | 'learning_hub' | 'practice' | 'progress';
+export type AppNavView = 'dashboard' | 'learning_hub' | 'practice' | 'progress' | 'profile';
 

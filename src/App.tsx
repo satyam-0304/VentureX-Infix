@@ -5,6 +5,7 @@ import { WorkspaceNavbar } from './components/Navbar/WorkspaceNavbar';
 import { LearningWorkspace } from './pages/LearningWorkspace';
 import { DashboardView } from './pages/DashboardView';
 import { ProgressView } from './pages/ProgressView';
+import { ProfileView } from './pages/ProfileView';
 import { AITutorDrawer } from './components/AITutor/AITutorDrawer';
 
 const AppContent: React.FC = () => {
@@ -24,6 +25,7 @@ const AppContent: React.FC = () => {
         {activeNavView === 'dashboard' && <DashboardView />}
         {activeNavView === 'learning_hub' && <DashboardView />}
         {activeNavView === 'progress' && <ProgressView />}
+        {activeNavView === 'profile' && <ProfileView />}
 
         {/* Floating AI Tutor Widget & Modal Drawer */}
         <AITutorDrawer />

@@ -9,13 +9,14 @@ from app.services.context_slicer import (
 from app.services.sample_data import get_demo_transcript, get_demo_video_title
 from app.services.gemini import is_gemini_configured, generate_structured
 from app.prompts.qa import build_qa_prompt
+from app.prompts.explain import build_explain_prompt
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chat", tags=["Contextual Q&A"])
 
 
-def _deterministic_mock_response(query: str, current_sec: float, sliced_items: list[dict]) -> ChatResponse:
+def _deterministic_mock_response(query: str, current_sec: float, sliced_items: list[dict], mode: QAMode = QAMode.STANDARD) -> ChatResponse:
     """Fallback generator when GEMINI_API_KEY is not configured or in offline test mode."""
     q_lower = query.lower()
 
@@ -27,6 +28,39 @@ def _deterministic_mock_response(query: str, current_sec: float, sliced_items: l
             citations=[],
             not_covered=True,
             concept_tag="Out of Scope",
+        )
+
+    # Modality specific overrides
+    if mode == QAMode.ANALOGY:
+        return ChatResponse(
+            answer="Think of benzoyl peroxide like an engine spark plug: on mild heating, it splits apart to produce eager free radicals that immediately kick off the chain reaction like cars coupling onto a moving locomotive.",
+            citations=[Citation(label="14:05", start_sec=845, end_sec=870)],
+            not_covered=False,
+            concept_tag="Analogy: Spark Plug",
+        )
+
+    if mode == QAMode.STEP_BY_STEP:
+        return ChatResponse(
+            answer="1. Initiation: Benzoyl peroxide breaks homolytically upon mild heating into two benzoyloxy radicals.\n2. Attack: The radical attacks the ethene monomer double bond, creating a new radical.\n3. Propagation: This radical successively attaches hundreds of monomers to rapidly grow the chain.",
+            citations=[Citation(label="14:05", start_sec=845, end_sec=910)],
+            not_covered=False,
+            concept_tag="Step-by-Step Breakdown",
+        )
+
+    if mode == QAMode.HINGLISH:
+        return ChatResponse(
+            answer="Dekho simple funda yeh hai: Benzoyl peroxide yahan initiator ki tarah kaam karta hai. Thoda sa heat hote hi iska O-O bond homolytically break ho jata hai aur free radicals ban jaate hain jo monomer pe attack karke chain reaction shuru kar dete hain!",
+            citations=[Citation(label="14:05", start_sec=845, end_sec=870)],
+            not_covered=False,
+            concept_tag="Hinglish Explanation",
+        )
+
+    if mode == QAMode.SIMPLER:
+        return ChatResponse(
+            answer="Imagine a long train being built. Benzoyl peroxide is like the starter engine that grabs onto the very first passenger car so more cars can link on behind it.",
+            citations=[Citation(label="14:05", start_sec=845, end_sec=870)],
+            not_covered=False,
+            concept_tag="Simplified Concept",
         )
 
     # Specific topic matches for Arjun's Polymers lecture
@@ -89,17 +123,27 @@ async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
 
         # 4. If Gemini is configured, invoke Gemini 2.5 Flash with structured output
         if is_gemini_configured():
-            system_instruction, user_prompt = build_qa_prompt(
-                query=request.query,
-                current_sec=request.current_timestamp,
-                formatted_transcript_slice=formatted_slice,
-                video_title=video_title,
-            )
+            if request.mode == QAMode.STANDARD:
+                system_instruction, user_prompt = build_qa_prompt(
+                    query=request.query,
+                    current_sec=request.current_timestamp,
+                    formatted_transcript_slice=formatted_slice,
+                    video_title=video_title,
+                )
+            else:
+                system_instruction, user_prompt = build_explain_prompt(
+                    query=request.query,
+                    current_sec=request.current_timestamp,
+                    formatted_transcript_slice=formatted_slice,
+                    mode=request.mode,
+                    video_title=video_title,
+                )
+
             return generate_structured(
                 prompt=user_prompt,
                 response_model=ChatResponse,
                 system_instruction=system_instruction,
-                temperature=0.2,
+                temperature=0.3 if request.mode != QAMode.STANDARD else 0.2,
             )
 
         # 5. Fallback for offline development / test runs without API key
@@ -107,6 +151,7 @@ async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
             query=request.query,
             current_sec=request.current_timestamp,
             sliced_items=sliced_items,
+            mode=request.mode,
         )
 
     except Exception as e:

@@ -7,6 +7,7 @@ from app.schemas import (
     FlashcardDeck,
     FlashcardItem,
     GenerateFlashcardsRequest,
+    GenerateMoreCardsRequest,
     CreateCardRequest,
     UpdateCardRequest,
     ReviewCardRequest,
@@ -55,6 +56,12 @@ async def get_or_create_for_video(video_id: str, session_id: Optional[str] = Non
 async def generate_deck(req: GenerateFlashcardsRequest, user_id: str = Depends(resolve_auth_user)):
     """Generates a fresh lecture-grounded flashcard deck from video transcript and chapters."""
     return FlashcardService.generate_flashcards(req, user_id)
+
+
+@router.post("/decks/{deck_id}/generate-more", response_model=FlashcardDeck)
+async def generate_more_cards(deck_id: str, req: GenerateMoreCardsRequest, user_id: str = Depends(resolve_auth_user)):
+    """Generates additional unique cards from the lecture transcript and appends them to deck without losing existing progress."""
+    return FlashcardService.generate_more_cards(deck_id, user_id, req.count)
 
 
 @router.post("/decks/{deck_id}/cards", response_model=FlashcardItem)

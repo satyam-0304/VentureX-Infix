@@ -367,3 +367,4 @@ export const DEFAULT_SESSIONS: LearningSession[] = [
     updatedAt: Date.now() - 432000000
   }
 ];
+

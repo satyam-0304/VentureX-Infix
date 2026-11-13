@@ -309,3 +309,4 @@ export const ActivitiesPanel: React.FC = () => {
     </div>
   );
 };
+

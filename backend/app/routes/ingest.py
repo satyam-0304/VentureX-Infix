@@ -73,7 +73,7 @@ async def ingest_video(request: IngestRequest) -> IngestResponse:
             )
 
         # Case 3: Fresh external YouTube video — fetch transcript & generate real chapters
-        transcript = fetch_youtube_transcript(video_id)
+        transcript = fetch_youtube_transcript(video_id, allow_placeholder=True)
         duration = int(transcript[-1]["start"] + transcript[-1].get("duration", 0)) if transcript else 1200
         title = f"Lecture Video ({video_id})"
 

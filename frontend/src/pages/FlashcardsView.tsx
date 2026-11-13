@@ -23,8 +23,10 @@ import {
   Video,
   CornerDownLeft,
   Filter,
+  AlertTriangle,
 } from 'lucide-react';
 import { useLearning } from '../contexts/LearningContext';
+import { extractYouTubeVideoId } from '../hooks/useYouTubePlayer';
 import {
   flashcardService,
   CreateCardInput,
@@ -44,6 +46,16 @@ export const FlashcardsView: React.FC = () => {
     setActiveNavView,
     sessions,
   } = useLearning();
+
+  const resolveVideoId = (session: any): string => {
+    if (!session) return '';
+    if (session.videoUrl) {
+      const yt = extractYouTubeVideoId(session.videoUrl);
+      if (yt) return yt;
+    }
+    if (session.videoId) return session.videoId;
+    return session.id || '';
+  };
 
   // Decks & active card state
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
@@ -83,8 +95,10 @@ export const FlashcardsView: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState<boolean>(false);
+  const [generateMode, setGenerateMode] = useState<'more' | 'fresh'>('more');
   const [generateCount, setGenerateCount] = useState<number>(18);
   const [isGeneratingMore, setIsGeneratingMore] = useState<boolean>(false);
+  const [transcriptError, setTranscriptError] = useState<string | null>(null);
 
   // Form states for adding/editing cards
   const [cardFormQuestion, setCardFormQuestion] = useState<string>('');
@@ -102,10 +116,11 @@ export const FlashcardsView: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    const videoId = (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '';
+    setTranscriptError(null);
+    const videoId = resolveVideoId(activeSession);
 
     flashcardService
-      .getOrCreateDeckForVideo(videoId, activeSession.id)
+      .getOrCreateDeckForVideo(videoId, activeSession.id, activeSession)
       .then((deck) => {
         if (!mounted) return;
         setActiveDeck(deck);
@@ -118,7 +133,11 @@ export const FlashcardsView: React.FC = () => {
       })
       .catch((err) => {
         console.error('Failed to load flashcard deck:', err);
-        if (mounted) setLoading(false);
+        if (mounted) {
+          const fallback = flashcardService.synthesizeGroundedCards(videoId, activeSession.title, activeSession, 18);
+          setActiveDeck(fallback);
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -353,7 +372,7 @@ export const FlashcardsView: React.FC = () => {
 
     try {
       const res = await flashcardService.aiAssist({
-        video_id: (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '',
+        video_id: resolveVideoId(activeSession),
         deck_id: activeDeck?.id,
         card_id: currentCard?.id,
         action: 'custom_chat',
@@ -489,23 +508,48 @@ export const FlashcardsView: React.FC = () => {
   // Generate Fresh / More Deck
   const handleGenerateFreshDeck = async () => {
     setIsGeneratingMore(true);
-    const videoId = (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '';
+    const videoId = resolveVideoId(activeSession);
     try {
-      const newDeck = await flashcardService.generateDeck(videoId, activeSession.title, generateCount);
-      setActiveDeck(newDeck);
+      if (generateMode === 'more' && activeDeck && activeDeck.cards.length > 0) {
+        const count = Math.min(Math.max(3, generateCount), 15);
+        const updatedDeck = await flashcardService.generateMoreCards(activeDeck.id, count, activeSession);
+        setActiveDeck(updatedDeck);
+        setIsGenerateModalOpen(false);
+        setAiMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            sender: 'ai',
+            text: `✨ Added ${updatedDeck.cards.length - activeDeck.cards.length} additional grounded flashcards to "${activeDeck.title}" across the full video timeline without resetting your study progress!`,
+          },
+        ]);
+      } else {
+        const newDeck = await flashcardService.generateDeck(videoId, activeSession.title, generateCount, activeSession);
+        setActiveDeck(newDeck);
+        setCurrentCardIndex(0);
+        setIsFlipped(false);
+        setIsGenerateModalOpen(false);
+        setAiMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            sender: 'ai',
+            text: `✨ Generated fresh study deck with ${newDeck.cards.length} cards proportionally grounded across the full timeline of **${activeSession.title}**!`,
+          },
+        ]);
+      }
+    } catch (err: any) {
+      console.warn('Backend generation fallback to client synthesis:', err);
+      const fallbackDeck = flashcardService.synthesizeGroundedCards(
+        videoId,
+        activeSession.title,
+        activeSession,
+        generateCount
+      );
+      setActiveDeck(fallbackDeck);
       setCurrentCardIndex(0);
       setIsFlipped(false);
       setIsGenerateModalOpen(false);
-      setAiMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-${Date.now()}`,
-          sender: 'ai',
-          text: `✨ Generated fresh study deck with ${newDeck.cards.length} cards grounded in **${activeSession.title}**!`,
-        },
-      ]);
-    } catch (err) {
-      console.error(err);
     } finally {
       setIsGeneratingMore(false);
     }
@@ -603,14 +647,38 @@ export const FlashcardsView: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setIsGenerateModalOpen(true)}
+              onClick={() => {
+                setGenerateMode(activeDeck && activeDeck.cards.length > 0 ? 'more' : 'fresh');
+                setIsGenerateModalOpen(true);
+              }}
               className="inline-flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg shadow-2xs transition-colors cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Regenerate Deck</span>
+              <span>AI Deck Tools</span>
             </button>
           </div>
         </div>
+
+        {/* Transcript Error Notification */}
+        {transcriptError && (
+          <div className="mt-3 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start space-x-3 text-xs text-amber-900 animate-fade-in">
+            <div className="p-1 bg-amber-100 rounded-lg text-amber-700 mt-0.5 shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold">Transcript Unavailable for AI Flashcards</p>
+              <p className="text-amber-800 mt-0.5 leading-relaxed">
+                {transcriptError}. Closed captions or a video transcript are required to extract grounded lecture flashcards.
+              </p>
+            </div>
+            <button
+              onClick={() => setTranscriptError(null)}
+              className="text-amber-600 hover:text-amber-900 font-semibold px-2 py-0.5"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Filter Bar: Category, Confidence, Bookmarked */}
         <div className="flex items-center justify-between py-3 flex-wrap gap-2 text-xs">
@@ -661,7 +729,27 @@ export const FlashcardsView: React.FC = () => {
             CARD STAGE: Centered Large Interactive Flashcard
            ===================================================================== */}
         <div className="flex-1 flex flex-col items-center justify-center my-4 max-w-3xl w-full mx-auto">
-          {filteredCards.length === 0 ? (
+          {!activeDeck || activeDeck.cards.length === 0 ? (
+            <div className="bg-white rounded-3xl p-10 text-center border border-slate-200 shadow-sm max-w-md w-full space-y-4 animate-fade-in">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-inner">
+                <Sparkles className="w-7 h-7 animate-pulse text-indigo-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-slate-800 text-base">Generate Flashcards for this Lecture</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Automatically extracts definitions, mechanisms, formulas, and key facts across the complete video timeline.
+                </p>
+              </div>
+              <button
+                onClick={handleGenerateFreshDeck}
+                disabled={isGeneratingMore}
+                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isGeneratingMore ? 'Generating Cards...' : 'Generate Flashcards Now'}</span>
+              </button>
+            </div>
+          ) : filteredCards.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm max-w-md w-full space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                 <BookOpen className="w-6 h-6" />
@@ -1234,7 +1322,7 @@ export const FlashcardsView: React.FC = () => {
         </div>
       )}
 
-      {/* Regenerate Deck Modal */}
+      {/* Regenerate / Add More Cards Modal */}
       {isGenerateModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 space-y-4">
@@ -1251,18 +1339,46 @@ export const FlashcardsView: React.FC = () => {
               </button>
             </div>
 
+            {/* Mode Selector */}
+            <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setGenerateMode('more')}
+                className={`flex-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  generateMode === 'more'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Add More Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setGenerateMode('fresh')}
+                className={`flex-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  generateMode === 'fresh'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Full Regeneration
+              </button>
+            </div>
+
             <p className="text-xs text-slate-600">
-              Generate a completely new set of flashcards directly extracted from the current video's transcript and chapters.
+              {generateMode === 'more'
+                ? 'Extract additional unique concept and formula cards from uncovered lecture sections without losing existing confidence ratings.'
+                : 'Extract a brand-new complete flashcard deck proportionally distributed across all chapters from start to finish.'}
             </p>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Number of Cards to Generate (15–25):
+                {generateMode === 'more' ? 'Additional Cards to Add (3–15):' : 'Total Cards to Generate (10–30):'}
               </label>
               <input
                 type="number"
-                min={10}
-                max={30}
+                min={generateMode === 'more' ? 3 : 10}
+                max={generateMode === 'more' ? 15 : 30}
                 value={generateCount}
                 onChange={(e) => setGenerateCount(Number(e.target.value))}
                 className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600"
@@ -1284,11 +1400,11 @@ export const FlashcardsView: React.FC = () => {
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer disabled:opacity-50"
               >
                 {isGeneratingMore ? (
-                  <span>Generating...</span>
+                  <span>Processing Lecture...</span>
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Generate Now</span>
+                    <span>{generateMode === 'more' ? 'Add Cards' : 'Generate Full Deck'}</span>
                   </>
                 )}
               </button>

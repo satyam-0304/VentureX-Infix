@@ -258,6 +258,10 @@ class GenerateFlashcardsRequest(BaseModel):
     chapter_filter: Optional[str] = None
 
 
+class GenerateMoreCardsRequest(BaseModel):
+    count: int = Field(default=5, ge=1, le=20, description="Number of additional cards to append")
+
+
 class CreateCardRequest(BaseModel):
     question: str
     answer: str

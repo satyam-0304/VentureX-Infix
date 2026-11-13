@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   LearningSession, 
   Note, 
@@ -11,6 +11,8 @@ import {
 } from '../types';
 import { DEFAULT_SESSIONS } from '../data/defaultSessions';
 import { geminiService } from '../services/geminiService';
+import { formatVideoTime } from '../utils/timeFormat';
+import { profileService } from '../services/profileService';
 
 interface LearningContextType {
   sessions: LearningSession[];
@@ -119,6 +121,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [captionsEnabled, setCaptionsEnabled] = useState<boolean>(true);
   const [interactiveMode, setInteractiveMode] = useState<boolean>(true);
   const [videoSeekTarget, setVideoSeekTarget] = useState<number | null>(null);
+  const lastWatchRecordedRef = useRef<number>(0);
 
   // Layout UI states
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -290,16 +293,28 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return true;
   };
 
-  const formatSeconds = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const secs = Math.floor(sec % 60);
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  // formatVideoTime imported from utils/timeFormat — replaces local formatSeconds
+  const formatSeconds = formatVideoTime;
 
   const updateVideoProgress = (time: number, duration?: number) => {
     setCurrentVideoTime(time);
     if (duration && duration > 0) {
       setVideoDuration(duration);
+    }
+    // Periodically record watch progress to profile history (every 20 seconds)
+    if (Math.abs(time - lastWatchRecordedRef.current) >= 20) {
+      lastWatchRecordedRef.current = time;
+      const totalDur = Math.floor(duration || videoDuration || activeSession.durationSeconds || 600);
+      const isCompleted = totalDur > 0 ? time >= totalDur * 0.9 : false;
+      profileService.recordWatch({
+        session_id: activeSession.id,
+        video_id: activeSession.id,
+        title: activeSession.title,
+        course_name: activeSession.courseName,
+        current_timestamp_sec: Math.floor(time),
+        duration_sec: totalDur,
+        completed: isCompleted,
+      });
     }
   };
 

@@ -8,6 +8,7 @@ import {
   ThumbsUp
 } from 'lucide-react';
 import { useLearning } from '../../contexts/LearningContext';
+import { formatVideoTime } from '../../utils/timeFormat';
 
 export const LectureTabs: React.FC = () => {
   const {
@@ -26,11 +27,7 @@ export const LectureTabs: React.FC = () => {
   const [discussionInput, setDiscussionInput] = useState('');
   const [speakingWord, setSpeakingWord] = useState<string | null>(null);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  const formatTime = formatVideoTime;
 
   const currentFormattedTime = formatTime(currentVideoTime);
 

@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
-import { Search, Bell } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Bell, User, Lock, LogOut, Sparkles } from 'lucide-react';
 import { useLearning } from '../../contexts/LearningContext';
 import { AppNavView } from '../../types';
+import { profileService, UserProfile } from '../../services/profileService';
 
 export const WorkspaceNavbar: React.FC = () => {
   const { activeNavView, setActiveNavView } = useLearning();
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [notificationCount, setNotificationCount] = useState(2);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    profileService.getProfile().then(setUserProfile).catch(() => {});
+  }, []);
 
   const navItems: { id: AppNavView; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -110,17 +117,77 @@ export const WorkspaceNavbar: React.FC = () => {
             )}
           </div>
 
-          {/* User Profile Avatar & Name */}
-          <div className="flex items-center space-x-3 pl-2 border-l border-slate-200">
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80"
-              alt="Simona Biles avatar"
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/20"
-            />
-            <div className="hidden xl:block text-left text-xs leading-tight">
-              <div className="font-semibold text-slate-800">Simona Biles</div>
-              <div className="text-slate-400 font-normal">simona@lurnix.edu</div>
-            </div>
+          {/* User Profile Avatar & Interactive Dropdown Menu */}
+          <div className="relative pl-2 border-l border-slate-200">
+            <button
+              onClick={() => setShowProfileMenu((prev) => !prev)}
+              className="flex items-center space-x-3 p-1 rounded-xl hover:bg-slate-100/70 transition-colors cursor-pointer text-left focus:outline-none"
+              title="Student Profile & Settings"
+            >
+              <img
+                src={userProfile?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80"}
+                alt={userProfile?.full_name || "Simona Biles"}
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/20"
+              />
+              <div className="hidden xl:block text-left text-xs leading-tight">
+                <div className="font-semibold text-slate-800">{userProfile?.full_name || "Simona Biles"}</div>
+                <div className="text-slate-400 font-normal">{userProfile?.email || "simona@lurnix.edu"}</div>
+              </div>
+            </button>
+
+            {/* Profile Dropdown Menu */}
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-40 animate-fade-in text-xs">
+                {/* Header preview */}
+                <div className="p-3 border-b border-slate-100 mb-1">
+                  <div className="font-bold text-slate-900">{userProfile?.full_name || "Simona Biles"}</div>
+                  <div className="text-[11px] text-slate-400 truncate">{userProfile?.email || "simona@lurnix.edu"}</div>
+                  {userProfile?.institution && (
+                    <div className="text-[10px] text-indigo-600 font-medium mt-1 truncate">
+                      {userProfile.institution}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setActiveNavView('profile');
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full flex items-center space-x-2.5 p-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left font-medium"
+                  >
+                    <User className="w-4 h-4 text-slate-400 pointer-events-none" />
+                    <span>My Profile & Stats</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveNavView('profile');
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full flex items-center space-x-2.5 p-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left font-medium"
+                  >
+                    <Lock className="w-4 h-4 text-slate-400 pointer-events-none" />
+                    <span>Password & Security</span>
+                  </button>
+                </div>
+
+                <div className="border-t border-slate-100 mt-1 pt-1">
+                  <button
+                    onClick={async () => {
+                      setShowProfileMenu(false);
+                      await profileService.logout();
+                      window.location.reload();
+                    }}
+                    className="w-full flex items-center space-x-2.5 p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors text-left font-medium"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-500 pointer-events-none" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>

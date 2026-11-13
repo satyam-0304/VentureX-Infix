@@ -30,7 +30,8 @@ export const SessionSidebar: React.FC = () => {
     closeNewSessionModal,
     createSession,
     renameSession,
-    deleteSession
+    deleteSession,
+    setActiveNavView
   } = useLearning();
 
   const [searchFilter, setSearchFilter] = useState('');
@@ -368,11 +369,11 @@ export const SessionSidebar: React.FC = () => {
             </button>
           </div>
 
-          {/* Settings Trigger */}
+          {/* Settings Trigger -> Open Profile & Account Settings */}
           <button
-            onClick={() => alert('LURNIX Platform Version 1.0.0\nReady for Gemini 1.5 / 2.0 Integration')}
-            className="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
-            title="Platform Settings"
+            onClick={() => setActiveNavView('profile')}
+            className="w-8 h-8 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-slate-800/80 flex items-center justify-center transition-colors cursor-pointer"
+            title="Profile & Account Settings"
           >
             <Settings className="w-4 h-4 pointer-events-none" />
           </button>

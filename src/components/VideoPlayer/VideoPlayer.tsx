@@ -22,6 +22,7 @@ import { useConfusionDetect } from '../../hooks/useConfusionDetect';
 import { extractYouTubeVideoId, isYouTubeSource } from '../../hooks/useYouTubePlayer';
 import { YouTubePlayerProvider } from '../../context/YouTubePlayerContext';
 import { videoService } from '../../services/videoService';
+import { formatVideoTime } from '../../utils/timeFormat';
 
 const VideoPlayerInternal: React.FC = () => {
   const {
@@ -153,12 +154,7 @@ const VideoPlayerInternal: React.FC = () => {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    if (isNaN(seconds) || seconds < 0) return '00:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  const formatTime = formatVideoTime;
 
   const progressPercent = videoDuration > 0 ? (currentVideoTime / videoDuration) * 100 : 0;
 

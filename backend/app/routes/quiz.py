@@ -8,6 +8,7 @@ from app.schemas import (
     RewatchLink,
 )
 from app.services.sample_data import get_demo_quiz, get_demo_question, get_demo_transcript
+from app.services.dynamic_cache import get_dynamic_quiz
 from app.services.context_slicer import slice_transcript, format_transcript_slice, format_seconds_to_timestamp
 from app.services.gemini import is_gemini_configured, generate_structured
 from app.prompts.remediation import build_remediation_prompt
@@ -20,13 +21,26 @@ router = APIRouter(tags=["Quiz & Remediation"])
 @router.get("/api/video/{video_id}/quiz", response_model=list[QuizQuestion])
 async def get_video_quiz(video_id: str):
     """Retrieve the concept-tagged quiz questions for a video."""
+    dyn_quiz = get_dynamic_quiz(video_id)
+    if dyn_quiz:
+        return dyn_quiz
     return get_demo_quiz(video_id)
 
 
 @router.post("/api/quiz/submit", response_model=QuizSubmissionResponse)
 async def submit_quiz_answer(submission: QuizSubmissionRequest):
     """Evaluate a student's quiz answer and close the learning loop with video remediation if incorrect."""
-    question = get_demo_question(submission.video_id, submission.question_id)
+    question = None
+    dyn_quiz = get_dynamic_quiz(submission.video_id)
+    if dyn_quiz:
+        for q in dyn_quiz:
+            if q.id == submission.question_id:
+                question = q
+                break
+
+    if not question:
+        question = get_demo_question(submission.video_id, submission.question_id)
+
     if not question:
         raise HTTPException(status_code=404, detail=f"Question ID {submission.question_id} not found.")
 

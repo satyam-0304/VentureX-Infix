@@ -65,39 +65,72 @@ class GeminiService {
   private generateSimulatedTutorResponse(payload: GeminiContextPayload): Promise<GeminiResponse> {
     return new Promise((resolve) => {
       const lower = payload.userQuery.toLowerCase();
-      let answer = `That is an excellent inquiry for the "${payload.sessionTitle}" session at timestamp ${payload.formattedTime}! In polymer chemistry, the relationship between molecular chain arrangement and bulk physical properties governs material durability and elasticity.`;
-      let relatedTimestamp: number | undefined;
+      const topic = payload.courseTopic || payload.sessionTitle || 'this topic';
+      const isChemistry = topic.toLowerCase().includes('chem') || topic.toLowerCase().includes('polymer');
+      const isNeural = topic.toLowerCase().includes('neural') || topic.toLowerCase().includes('machine') || topic.toLowerCase().includes('ai');
+      const isPhysics = topic.toLowerCase().includes('phys') || topic.toLowerCase().includes('electro') || topic.toLowerCase().includes('mechanic');
 
-      if (lower.includes('vulcaniz') || lower.includes('cross') || lower.includes('sulfur')) {
-        answer = 'Vulcanization is the chemical treatment of natural polyisoprene (rubber) with elemental sulfur. By creating covalent sulfur disulfide cross-links between adjacent polymer strands, it restrains chain slippage, rendering the elastomer significantly more rigid, elastic, and heat-resistant.';
-        relatedTimestamp = 180;
-      } else if (lower.includes('monomer') || lower.includes('chain') || lower.includes('repeat')) {
-        answer = 'A monomer is a reactive low-molecular-weight molecule (such as ethylene, styrene, or amino acids) capable of bonding with other monomers through addition or condensation polymerization to assemble high-molecular-weight polymer chains.';
-        relatedTimestamp = 60;
-      } else if (lower.includes('synthetic') || lower.includes('natural') || lower.includes('cellulose')) {
-        answer = 'Natural polymers originate biologically (e.g., cellulose in plant cell walls, starch, proteins, and DNA). In contrast, synthetic polymers (e.g., nylon-6,6, polyethylene, Teflon) are synthesized through industrial chemical engineering from petrochemical monomers.';
-        relatedTimestamp = 120;
-      } else if (lower.includes('thermoplastic') || lower.includes('thermosetting') || lower.includes('melt')) {
-        answer = 'Thermoplastics consist of linear or branched chains held by intermolecular van der Waals forces that can be repeatedly melted, reshaped, and recycled. Thermosetting polymers feature irreversible 3D covalent cross-linked networks that decompose rather than melt upon heating.';
-        relatedTimestamp = 240;
-      } else if (lower.includes('quiz') || lower.includes('task') || lower.includes('help')) {
-        answer = `Regarding your current task checkpoint (${payload.activeTaskTitle || 'Understanding Check'}): Focus on whether covalent bonds link repeating subunits into continuous macromolecules. Repeating subunits are the defining hallmark of all polymers!`;
-      } else if (lower.includes('summar') || lower.includes('recap')) {
-        answer = 'Key Lecture Summary: Polymers are macromolecules comprised of repeating monomer subunits. Material elasticity and thermal resistance are determined by linear vs cross-linked architectures. Understanding addition vs condensation reactions unlocks synthetic engineering.';
+      let answer = `That is a great question about ${payload.sessionTitle} at ${payload.formattedTime}! The fundamental concept here connects back to the core principles introduced earlier in the lecture. Focus on how the primary components interact in this segment.`;
+      let relatedTimestamp: number | undefined;
+      let followUps = [
+        `Can you break down the main idea at ${payload.formattedTime}?`,
+        `What is the key formula or principle here?`,
+        `How does this apply to practical problem solving?`
+      ];
+
+      if (isChemistry) {
+        if (lower.includes('vulcaniz') || lower.includes('cross') || lower.includes('sulfur')) {
+          answer = 'Vulcanization is the treatment of natural rubber with sulfur, creating covalent cross-links between polymer chains to increase elasticity and thermal stability.';
+          relatedTimestamp = 180;
+        } else if (lower.includes('monomer') || lower.includes('chain')) {
+          answer = 'A monomer is a repeating unit that bonds through addition or condensation polymerization to assemble high-molecular-weight polymer chains.';
+          relatedTimestamp = 60;
+        }
+        followUps = [
+          'What is the difference between addition and condensation?',
+          'How does sulfur cross-linking affect elasticity?',
+          'Explain thermoplastic vs thermosetting polymers.'
+        ];
+      } else if (isNeural) {
+        if (lower.includes('gradient') || lower.includes('descent') || lower.includes('loss')) {
+          answer = 'Gradient descent iteratively updates model weights in the direction of the negative gradient of the loss function, minimizing prediction error.';
+          relatedTimestamp = 320;
+        } else if (lower.includes('backprop') || lower.includes('chain')) {
+          answer = 'Backpropagation applies the chain rule of calculus to compute loss gradients with respect to each weight, propagating error signals backward from output to input.';
+          relatedTimestamp = 720;
+        }
+        followUps = [
+          'How does the learning rate affect gradient descent?',
+          'Why is the chain rule critical for backpropagation?',
+          'What is the role of activation functions in neural nets?'
+        ];
+      } else if (isPhysics) {
+        if (lower.includes('faraday') || lower.includes('flux') || lower.includes('emf')) {
+          answer = "Faraday's law states that the induced electromotive force (EMF) is proportional to the negative rate of change of magnetic flux through the circuit: EMF = -dΦ/dt.";
+          relatedTimestamp = 480;
+        }
+        followUps = [
+          "State Lenz's law and its relation to energy conservation.",
+          'How does self-inductance differ from mutual inductance?',
+          'Explain the operating principle of an AC generator.'
+        ];
+      } else {
+        // Universal academic explanation for any subject (Math, Calculus, Biology, etc.)
+        if (lower.includes('help') || lower.includes('quiz') || lower.includes('task')) {
+          answer = `For your active checkpoint (${payload.activeTaskTitle || 'Check'}): Review the concept introduced in this section. Think about the fundamental definition and identify what changes vs what stays constant.`;
+        } else if (lower.includes('summar') || lower.includes('recap')) {
+          answer = `Summary for "${payload.sessionTitle}": We are exploring the core foundations of this topic. The video breaks down the mechanism step by step, demonstrating practical applications.`;
+        }
       }
 
       setTimeout(() => {
         resolve({
           answer,
           source: 'mock_local_pedagogy',
-          suggestedFollowUps: [
-            'What is the difference between addition and condensation?',
-            'How does sulfur cross-linking affect elasticity?',
-            'Explain thermoplastic vs thermosetting polymers.'
-          ],
+          suggestedFollowUps: followUps,
           relatedTimestamp,
         });
-      }, 750);
+      }, 500);
     });
   }
 }

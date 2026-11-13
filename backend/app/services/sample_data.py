@@ -319,32 +319,53 @@ DEMO_REVISIONS: dict[str, RapidRevisionResponse] = {
 }
 
 
-def get_demo_transcript(video_id: str) -> list[dict[str, Any]]:
-    """Retrieve transcript for a given video ID."""
+# Mapping from known YouTube video IDs to demo fixture keys
+YOUTUBE_TO_DEMO_MAP: dict[str, str] = {
+    "k38j3pG6KXY": "demo_polymers",
+    "aircAruvnKk": "demo_neural_nets",
+    "bHTqg7nQ2iE": "demo_electromagnetism",
+}
+
+
+def resolve_demo_key(video_id: str) -> str | None:
+    """Resolve a video_id (which could be a slug or a YouTube ID) to a demo key."""
     if video_id in DEMO_VIDEOS:
-        return DEMO_VIDEOS[video_id]["transcript"]
-    return DEMO_VIDEOS["demo_polymers"]["transcript"]
+        return video_id
+    if video_id in YOUTUBE_TO_DEMO_MAP:
+        return YOUTUBE_TO_DEMO_MAP[video_id]
+    return None
+
+
+def get_demo_transcript(video_id: str) -> list[dict[str, Any]]:
+    """Retrieve transcript for a given video ID. Returns empty list if not a demo video."""
+    key = resolve_demo_key(video_id)
+    if key and key in DEMO_VIDEOS:
+        return DEMO_VIDEOS[key]["transcript"]
+    return []
 
 
 def get_demo_video_title(video_id: str) -> str:
     """Retrieve title for a video."""
-    if video_id in DEMO_VIDEOS:
-        return DEMO_VIDEOS[video_id]["title"]
-    return "Educational Lecture Video"
+    key = resolve_demo_key(video_id)
+    if key and key in DEMO_VIDEOS:
+        return DEMO_VIDEOS[key]["title"]
+    return f"Lecture Video ({video_id})"
 
 
 def get_demo_chapters(video_id: str) -> list[Chapter]:
-    """Retrieve chapter boundaries for a given video."""
-    if video_id in DEMO_CHAPTERS:
-        return DEMO_CHAPTERS[video_id]
-    return DEMO_CHAPTERS["demo_polymers"]
+    """Retrieve chapter boundaries for a given video. Returns empty list if not a demo video."""
+    key = resolve_demo_key(video_id)
+    if key and key in DEMO_CHAPTERS:
+        return DEMO_CHAPTERS[key]
+    return []
 
 
 def get_demo_notes(video_id: str) -> list[ChapterNotes]:
-    """Retrieve structured notes for a given video."""
-    if video_id in DEMO_NOTES:
-        return DEMO_NOTES[video_id]
-    return DEMO_NOTES["demo_polymers"]
+    """Retrieve structured notes for a given video. Returns empty list if not a demo video."""
+    key = resolve_demo_key(video_id)
+    if key and key in DEMO_NOTES:
+        return DEMO_NOTES[key]
+    return []
 
 
 def get_demo_chapter_notes(video_id: str, chapter_id: int) -> ChapterNotes | None:
@@ -357,10 +378,11 @@ def get_demo_chapter_notes(video_id: str, chapter_id: int) -> ChapterNotes | Non
 
 
 def get_demo_quiz(video_id: str) -> list[QuizQuestion]:
-    """Retrieve canonical quiz questions for a given demo video."""
-    if video_id in DEMO_QUIZZES:
-        return DEMO_QUIZZES[video_id]
-    return DEMO_QUIZZES["demo_polymers"]
+    """Retrieve canonical quiz questions for a given demo video. Returns empty list if not a demo video."""
+    key = resolve_demo_key(video_id)
+    if key and key in DEMO_QUIZZES:
+        return DEMO_QUIZZES[key]
+    return []
 
 
 def get_demo_question(video_id: str, question_id: int) -> QuizQuestion | None:
@@ -372,8 +394,9 @@ def get_demo_question(video_id: str, question_id: int) -> QuizQuestion | None:
     return None
 
 
-def get_demo_revision(video_id: str) -> RapidRevisionResponse:
-    """Retrieve 10-minute rapid revision cheat sheet for a video."""
-    if video_id in DEMO_REVISIONS:
-        return DEMO_REVISIONS[video_id]
-    return DEMO_REVISIONS["demo_polymers"]
+def get_demo_revision(video_id: str) -> RapidRevisionResponse | None:
+    """Retrieve 10-minute rapid revision cheat sheet for a video. Returns None if not a demo video."""
+    key = resolve_demo_key(video_id)
+    if key and key in DEMO_REVISIONS:
+        return DEMO_REVISIONS[key]
+    return None

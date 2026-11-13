@@ -9,7 +9,7 @@ export const DEFAULT_SESSIONS: LearningSession[] = [
     topic: 'Polymers',
     lessonTitle: 'Watch your lesson',
     lessonNumber: 'Video Lesson 04',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    videoUrl: 'https://www.youtube.com/watch?v=k38j3pG6KXY',
     posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFJVrl_Xru8fqMdzEDJE3EM4k3zpBMz4H5jwdEUzAMkO_rAC5yMGdX2NzMez72-Jg7cPgpw9xqw_87neaSAffbiBGuQ7ThDq2hxFAtAtxv-X-wQ_lt7OPTTkCL2BCX_jp_dJ-gCCHITACIos7DQW04R3G3Za5OGCARJNEgNmPhNrwYKPoENfT2kTyZoONS1h7ShPiIUNucMPDaZc0OagyDNRtsgSfeW5n6RJd6sfyXudWfHe0q5Ju8',
     durationSeconds: 1110, // 18m 30s
     savedPlaybackPosition: 402, // 06:42

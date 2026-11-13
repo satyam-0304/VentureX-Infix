@@ -11,7 +11,8 @@ import {
   Youtube,
   Link2,
   X,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { useLearning } from '../../contexts/LearningContext';
 import { YouTubePlayer } from '../video/YouTubePlayer';
@@ -20,6 +21,7 @@ import { ConfusionToast } from '../video/ConfusionToast';
 import { useConfusionDetect } from '../../hooks/useConfusionDetect';
 import { extractYouTubeVideoId, isYouTubeSource } from '../../hooks/useYouTubePlayer';
 import { YouTubePlayerProvider } from '../../context/YouTubePlayerContext';
+import { videoService } from '../../services/videoService';
 
 const VideoPlayerInternal: React.FC = () => {
   const {
@@ -47,7 +49,8 @@ const VideoPlayerInternal: React.FC = () => {
     addBookmark,
     openAiTutor,
     sendChatMessage,
-    updateSessionVideoUrl
+    updateSessionVideoUrl,
+    updateActiveSessionVideoData
   } = useLearning();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -57,6 +60,7 @@ const VideoPlayerInternal: React.FC = () => {
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [customUrlInput, setCustomUrlInput] = useState('');
   const [urlInputError, setUrlInputError] = useState<string | null>(null);
+  const [isLoadingVideo, setIsLoadingVideo] = useState(false);
 
   const isYouTube = isYouTubeSource(activeSession.videoUrl);
 
@@ -158,22 +162,27 @@ const VideoPlayerInternal: React.FC = () => {
 
   const progressPercent = videoDuration > 0 ? (currentVideoTime / videoDuration) * 100 : 0;
 
-  // Closed caption subtitle text computed based on timestamp
-  const getCaptionText = () => {
-    if (currentVideoTime < 90) {
-      return '"Polymers are formed by repeating monomer units that establish covalent bonds."';
-    } else if (currentVideoTime < 150) {
-      return '"Natural polymers such as cellulose differ in synthesis compared to polyamides."';
-    } else if (currentVideoTime < 240) {
-      return '"Cross-linking forms covalent bridges that alter viscoelasticity."';
-    } else if (currentVideoTime < 300) {
-      return '"In modern biomaterials, smart polymers respond dynamically to pH and temperature."';
+  // Closed caption subtitle text: look up the nearest transcript line to current time.
+  // Falls back to a generic placeholder when the session has no transcript.
+  const getCaptionText = (): string => {
+    const lines = activeSession.transcript;
+    if (!lines || lines.length === 0) {
+      return '"Playing lecture content…"';
     }
-    return '"Synthetic macromolecules provide high strength-to-weight ratios in aerospace components."';
+    // Find the last transcript line whose timestamp is ≤ currentVideoTime
+    let best = lines[0];
+    for (const line of lines) {
+      if (line.timestamp <= currentVideoTime) {
+        best = line;
+      } else {
+        break;
+      }
+    }
+    return `"${best.text}"`;
   };
 
-  // Handle loading a new YouTube video URL
-  const handleLoadYouTubeUrl = (e: React.FormEvent) => {
+  // Handle loading a new YouTube video URL with full curriculum synchronization
+  const handleLoadYouTubeUrl = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlInputError(null);
     const trimmed = customUrlInput.trim();
@@ -188,16 +197,50 @@ const VideoPlayerInternal: React.FC = () => {
       return;
     }
 
-    updateSessionVideoUrl(trimmed);
-    setShowUrlModal(false);
-    setCustomUrlInput('');
+    setIsLoadingVideo(true);
+    try {
+      const data = await videoService.ingestVideo(trimmed);
+      updateActiveSessionVideoData(trimmed, {
+        title: data.title,
+        durationSeconds: data.durationSec,
+        chapters: data.chapters,
+        tasks: data.tasks,
+        notes: data.notes,
+        transcript: data.transcript,
+      });
+      setShowUrlModal(false);
+      setCustomUrlInput('');
+    } catch (err) {
+      updateSessionVideoUrl(trimmed);
+      setShowUrlModal(false);
+      setCustomUrlInput('');
+    } finally {
+      setIsLoadingVideo(false);
+    }
   };
 
   // Quick preset loader helper
-  const handleLoadPreset = (url: string) => {
-    updateSessionVideoUrl(url);
-    setShowUrlModal(false);
-    setCustomUrlInput('');
+  const handleLoadPreset = async (url: string) => {
+    setIsLoadingVideo(true);
+    try {
+      const data = await videoService.ingestVideo(url);
+      updateActiveSessionVideoData(url, {
+        title: data.title,
+        durationSeconds: data.durationSec,
+        chapters: data.chapters,
+        tasks: data.tasks,
+        notes: data.notes,
+        transcript: data.transcript,
+      });
+      setShowUrlModal(false);
+      setCustomUrlInput('');
+    } catch (err) {
+      updateSessionVideoUrl(url);
+      setShowUrlModal(false);
+      setCustomUrlInput('');
+    } finally {
+      setIsLoadingVideo(false);
+    }
   };
 
   return (
@@ -359,33 +402,27 @@ const VideoPlayerInternal: React.FC = () => {
               <span className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md scale-100 group-hover/scrub:scale-125 transition-transform pointer-events-none" />
             </div>
 
-            {/* Milestone Markers */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSeek(60);
-              }}
-              className="milestone-marker absolute left-[36%] w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-white -top-[1px] hover:scale-150 transition-transform cursor-pointer"
-              title="Jump to Task 1: Understanding Check (01:00)"
-            />
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSeek(120);
-              }}
-              className="milestone-marker absolute left-[52%] w-2.5 h-2.5 rounded-full bg-amber-400 ring-1 ring-white -top-[1px] hover:scale-150 transition-transform cursor-pointer"
-              title="Jump to Task 2: Synthetic vs Natural (02:00)"
-            />
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSeek(180);
-              }}
-              className="milestone-marker absolute left-[70%] w-2.5 h-2.5 rounded-full bg-indigo-300 ring-1 ring-white -top-[1px] hover:scale-150 transition-transform cursor-pointer"
-              title="Jump to Task 3: Cross-linking (03:00)"
-            />
+            {/* Dynamic Milestone Markers — driven by activeSession tasks */}
+            {activeSession.tasks
+              .filter((t) => t.timestampTarget != null && (videoDuration || 1) > 0)
+              .slice(0, 5)
+              .map((task, idx) => {
+                const colors = ['bg-emerald-400 ring-2 ring-white', 'bg-amber-400 ring-1 ring-white', 'bg-indigo-300 ring-1 ring-white', 'bg-rose-400 ring-1 ring-white', 'bg-cyan-400 ring-1 ring-white'];
+                const pct = Math.min(98, Math.max(2, ((task.timestampTarget ?? 0) / (videoDuration || 1)) * 100));
+                return (
+                  <button
+                    key={task.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSeek(task.timestampTarget ?? 0);
+                    }}
+                    className={`milestone-marker absolute w-2.5 h-2.5 rounded-full ${colors[idx % colors.length]} -top-[1px] hover:scale-150 transition-transform cursor-pointer`}
+                    style={{ left: `${pct}%` }}
+                    title={`${task.title}`}
+                  />
+                );
+              })
+            }
           </div>
 
           {/* Video Controls Row */}
@@ -570,10 +607,20 @@ const VideoPlayerInternal: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-colors cursor-pointer"
+                  disabled={isLoadingVideo}
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-md transition-colors cursor-pointer"
                 >
-                  <Check className="w-3.5 h-3.5 pointer-events-none" />
-                  <span>Load Video</span>
+                  {isLoadingVideo ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin pointer-events-none" />
+                      <span>Ingesting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5 pointer-events-none" />
+                      <span>Load Video</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

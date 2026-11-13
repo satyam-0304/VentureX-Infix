@@ -18,6 +18,7 @@ export interface GeminiContextPayload {
   activeTaskTitle?: string;
   recentNotes?: string[];
   userQuery: string;
+  mode?: 'standard' | 'simpler' | 'analogy' | 'step_by_step' | 'hinglish';
 }
 
 export interface GeminiResponse {
@@ -28,7 +29,7 @@ export interface GeminiResponse {
 }
 
 class GeminiService {
-  private apiEndpoint: string = import.meta.env.VITE_AI_PROXY_URL || '';
+  private apiEndpoint: string = import.meta.env.VITE_AI_PROXY_URL || 'http://localhost:8000/api/chat';
 
   /**
    * Generates a contextual pedagogical response based on active video timestamp and topic.
@@ -44,11 +45,12 @@ class GeminiService {
         });
         if (response.ok) {
           const data = await response.json();
+          const related = data.relatedTimestamp ?? (data.citations && data.citations.length > 0 ? data.citations[0].start_sec : undefined);
           return {
             answer: data.text || data.answer,
             source: 'gemini_api',
             suggestedFollowUps: data.suggestedFollowUps,
-            relatedTimestamp: data.relatedTimestamp,
+            relatedTimestamp: related,
           };
         }
       } catch (err) {

@@ -64,7 +64,9 @@ interface LearningContextType {
   submitTaskAnswer: (taskId: string) => { isCorrect: boolean; message: string };
   postDiscussion: (text: string) => void;
   upvoteDiscussion: (postId: string) => void;
-  sendChatMessage: (text: string) => Promise<void>;
+  sendChatMessage: (text: string, mode?: 'standard' | 'simpler' | 'analogy' | 'step_by_step' | 'hinglish') => Promise<void>;
+  updateSessionVideoUrl: (url: string) => void;
+  setChapters: (chapters: import('../types').Chapter[]) => void;
   resetToDefaultSessions: () => void;
 }
 
@@ -485,7 +487,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // AI Chat
-  const sendChatMessage = async (text: string) => {
+  const sendChatMessage = async (text: string, mode?: 'standard' | 'simpler' | 'analogy' | 'step_by_step' | 'hinglish') => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -518,6 +520,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeTaskTitle: activeTask?.title,
         recentNotes: activeSession.notes.slice(0, 3).map((n) => n.text),
         userQuery: trimmed,
+        mode: mode || 'standard',
       };
 
       const response = await geminiService.askTutor(payload);
@@ -528,6 +531,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         text: response.answer,
         timestamp: formatSeconds(currentVideoTime),
         isContextual: true,
+        relatedTimestamp: response.relatedTimestamp,
       };
 
       setSessions((prev) =>
@@ -545,6 +549,20 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setAiTyping(false);
     }
+  };
+
+  const updateSessionVideoUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setSessions((prev) =>
+      prev.map((s) => (s.id === activeSessionId ? { ...s, videoUrl: trimmed, updatedAt: Date.now() } : s))
+    );
+  };
+
+  const setChapters = (chapters: import('../types').Chapter[]) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === activeSessionId ? { ...s, chapters, updatedAt: Date.now() } : s))
+    );
   };
 
   const resetToDefaultSessions = () => {
@@ -608,6 +626,8 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         postDiscussion,
         upvoteDiscussion,
         sendChatMessage,
+        updateSessionVideoUrl,
+        setChapters,
         resetToDefaultSessions,
       }}
     >

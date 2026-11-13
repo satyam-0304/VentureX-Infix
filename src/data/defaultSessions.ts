@@ -115,6 +115,36 @@ export const DEFAULT_SESSIONS: LearningSession[] = [
       { id: 'tr-5', timestamp: 240, formattedTime: '04:00', text: 'In modern aerospace and biomedical engineering, high-performance thermoplastics replace heavy metals.' },
       { id: 'tr-6', timestamp: 300, formattedTime: '05:00', text: 'Addition polymerization proceeds via free-radical or ionic catalysts without byproduct condensation molecules.' }
     ],
+    chapters: [
+      {
+        id: 1,
+        title: 'Introduction & Classification by Source',
+        start_sec: 0,
+        end_sec: 240,
+        summary: 'Definition of macromolecules and classification into natural, semi-synthetic, and synthetic polymers.'
+      },
+      {
+        id: 2,
+        title: 'Addition Polymerization Mechanics',
+        start_sec: 240,
+        end_sec: 540,
+        summary: 'Chain-growth polymerization through initiator radicals, propagation, and termination.'
+      },
+      {
+        id: 3,
+        title: 'Condensation & Cross-linking',
+        start_sec: 540,
+        end_sec: 840,
+        summary: 'Step-growth polycondensation mechanisms, Nylon 6,6 synthesis, and vulcanization.'
+      },
+      {
+        id: 4,
+        title: 'Biomaterials & Modern Applications',
+        start_sec: 840,
+        end_sec: 1110,
+        summary: 'Smart polymers, viscoelastic properties, and engineering materials.'
+      }
+    ],
     discussions: [
       {
         id: 'disc-1',

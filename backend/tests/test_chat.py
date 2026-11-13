@@ -61,3 +61,27 @@ def test_chat_propagation_timestamp():
     assert len(data["citations"]) >= 1
     assert data["citations"][0]["start_sec"] == 950
 
+
+
+def test_chat_frontend_camelcase_payload():
+    """Verify that the frontend React payload with camelCase aliases works seamlessly."""
+    frontend_payload = {
+        "sessionTitle": "Polymers & Macromolecules",
+        "courseTopic": "Polymers",
+        "currentTimestamp": 845.0,
+        "formattedTime": "14:05",
+        "userQuery": "What is the role of benzoyl peroxide here?",
+    }
+    response = client.post("/api/chat", json=frontend_payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    # Verify both backend and frontend compatibility fields
+    assert "answer" in data
+    assert "text" in data
+    assert data["text"] == data["answer"]
+    assert "benzoyl peroxide" in data["text"].lower()
+    assert "relatedTimestamp" in data
+    assert data["relatedTimestamp"] == 845
+    assert "suggestedFollowUps" in data
+    assert len(data["suggestedFollowUps"]) >= 1

@@ -1,3 +1,22 @@
+export interface Chapter {
+  id: number;
+  title: string;
+  start_sec: number;
+  end_sec: number;
+  summary?: string;
+}
+
+export interface YouTubePlayerContextType {
+  currentTime: number;
+  duration: number;
+  isPlaying: boolean;
+  seekTo: (seconds: number) => void;
+  pause: () => void;
+  play: () => void;
+  chapters: Chapter[];
+  activeChapter: Chapter | null;
+}
+
 export interface Note {
   id: string;
   timestamp: number;
@@ -63,6 +82,7 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   isContextual?: boolean;
+  relatedTimestamp?: number;
 }
 
 export interface LearningSession {
@@ -86,6 +106,7 @@ export interface LearningSession {
   notes: Note[];
   bookmarks: Bookmark[];
   transcript: TranscriptLine[];
+  chapters?: Chapter[];
   discussions: DiscussionPost[];
   chatHistory: ChatMessage[];
   updatedAt: number;

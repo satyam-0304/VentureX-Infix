@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class QAMode(str, Enum):
@@ -18,10 +18,12 @@ class Citation(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    video_id: str = Field(description="YouTube video ID or slug")
-    current_timestamp: float = Field(default=0.0, description="Current video playback position in seconds")
-    query: str = Field(description="Student's question or doubt")
+    video_id: str = Field(default="demo_polymers", description="YouTube video ID or slug")
+    current_timestamp: float = Field(default=0.0, description="Current video playback position in seconds", alias="currentTimestamp")
+    query: str = Field(default="", description="Student's question or doubt", alias="userQuery")
     mode: QAMode = Field(default=QAMode.STANDARD, description="Explanation mode")
+
+    model_config = {"populate_by_name": True}
 
 
 class ChatResponse(BaseModel):
@@ -29,6 +31,25 @@ class ChatResponse(BaseModel):
     citations: list[Citation] = Field(default_factory=list, description="Clickable timestamp citations")
     not_covered: bool = Field(default=False, description="True if query is not covered in the lecture")
     concept_tag: Optional[str] = Field(default=None, description="Topic/concept tag")
+    suggestedFollowUps: list[str] = Field(
+        default=[
+            "Explain this with an everyday analogy",
+            "Show the step-by-step reaction mechanism",
+            "Explain this in conversational Hinglish",
+        ]
+    )
+    relatedTimestamp: Optional[int] = None
+    text: Optional[str] = None
+
+    model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def populate_frontend_compat(self) -> "ChatResponse":
+        if not self.text:
+            self.text = self.answer
+        if self.relatedTimestamp is None and self.citations:
+            self.relatedTimestamp = self.citations[0].start_sec
+        return self
 
 
 class RewatchLink(BaseModel):

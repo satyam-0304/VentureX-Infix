@@ -422,28 +422,70 @@ class FlashcardService {
       });
       if (res.ok) {
         const deck = await res.json();
+        const local = this.ensureLocalCache();
+        const idx = local.findIndex((d) => d.id === deck.id);
+        if (idx >= 0) local[idx] = deck;
+        else local.unshift(deck);
+        this.saveLocalDecks(local);
         return deck;
       }
-    } catch (e) {}
+      if (res.status === 422) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Transcript is unavailable for this video.');
+      }
+    } catch (e: any) {
+      if (e?.message && e.message.includes('Transcript is unavailable')) {
+        throw e;
+      }
+    }
 
-    // Fallback: check local cache or generate
+    // Fallback: check local cache
     const local = this.ensureLocalCache();
     const existing = local.find((d) => d.video_id === videoId);
     if (existing) return existing;
 
-    // Generate local deck
+    if (videoId === 'demo_polymers' || videoId === 'k38j3pG6KXY') {
+      return SEED_POLYMERS_DECK;
+    }
+
+    // Default clean empty deck for unknown video
     const newDeck: FlashcardDeck = {
-      ...SEED_POLYMERS_DECK,
       id: `deck_${videoId}_${Date.now()}`,
+      user_id: 'usr_simona_01',
       video_id: videoId,
       session_id: sessionId,
-      title: `Study Deck: ${videoId}`,
+      title: `Lecture Study Deck (${videoId})`,
+      description: `Flashcards for lecture video ${videoId}.`,
+      card_count: 0,
+      mastered_count: 0,
       created_at: Date.now(),
       updated_at: Date.now(),
+      cards: [],
     };
     local.push(newDeck);
     this.saveLocalDecks(local);
     return newDeck;
+  }
+
+  /**
+   * Generates additional unique cards from the lecture and appends them to deck.
+   */
+  async generateMoreCards(deckId: string, count: number = 5): Promise<FlashcardDeck> {
+    const res = await fetch(`${this.apiBase}/api/flashcards/decks/${deckId}/generate-more`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ count }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to generate additional cards.');
+    }
+    const updatedDeck = await res.json();
+    const local = this.ensureLocalCache();
+    const idx = local.findIndex((d) => d.id === updatedDeck.id);
+    if (idx >= 0) local[idx] = updatedDeck;
+    this.saveLocalDecks(local);
+    return updatedDeck;
   }
 
   /**

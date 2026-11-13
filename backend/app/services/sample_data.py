@@ -319,20 +319,38 @@ DEMO_REVISIONS: dict[str, RapidRevisionResponse] = {
 }
 
 
-# Mapping from known YouTube video IDs to demo fixture keys
+# Mapping from known YouTube video IDs and session IDs to demo fixture keys
 YOUTUBE_TO_DEMO_MAP: dict[str, str] = {
     "k38j3pG6KXY": "demo_polymers",
     "aircAruvnKk": "demo_neural_nets",
     "bHTqg7nQ2iE": "demo_electromagnetism",
+    "session-pl-04": "demo_polymers",
+    "session-ch-01": "demo_polymers",
+    "session-oc-02": "demo_polymers",
+    "session-py-03": "demo_neural_nets",
+    "session-bc-05": "demo_polymers",
+    "session-en-06": "demo_electromagnetism",
 }
 
 
 def resolve_demo_key(video_id: str) -> str | None:
-    """Resolve a video_id (which could be a slug or a YouTube ID) to a demo key."""
+    """Resolve a video_id (which could be a slug, YouTube ID, or session ID) to a demo key."""
+    if not video_id:
+        return None
     if video_id in DEMO_VIDEOS:
         return video_id
     if video_id in YOUTUBE_TO_DEMO_MAP:
         return YOUTUBE_TO_DEMO_MAP[video_id]
+    for key, data in DEMO_VIDEOS.items():
+        if data.get("youtube_id") == video_id:
+            return key
+    vid_lower = video_id.lower()
+    if "polymer" in vid_lower or "chem" in vid_lower:
+        return "demo_polymers"
+    if "neural" in vid_lower or "net" in vid_lower or "gradient" in vid_lower:
+        return "demo_neural_nets"
+    if "magnet" in vid_lower or "phys" in vid_lower or "electr" in vid_lower:
+        return "demo_electromagnetism"
     return None
 
 

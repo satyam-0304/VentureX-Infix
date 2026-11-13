@@ -125,3 +125,92 @@ class HealthResponse(BaseModel):
     gemini_configured: bool
     environment: str
 
+
+class UserProfile(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    bio: Optional[str] = ""
+    avatar_url: Optional[str] = ""
+    institution: Optional[str] = ""
+    target_exam: Optional[str] = ""
+    created_at: int
+    updated_at: int
+
+
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    bio: Optional[str] = None
+    institution: Optional[str] = None
+    target_exam: Optional[str] = None
+
+
+class AvatarUploadRequest(BaseModel):
+    avatar_data: str = Field(description="Base64 encoded image or data URI")
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
+class LearningStats(BaseModel):
+    total_lectures_watched: int
+    total_lectures_completed: int
+    total_learning_time_sec: int
+    total_learning_time_formatted: str
+    quizzes_attempted: int
+    quizzes_completed: int
+    average_quiz_accuracy: float
+    current_streak_days: int
+    active_modules_count: int
+
+
+class WatchHistoryItem(BaseModel):
+    id: int
+    session_id: str
+    video_id: str
+    title: str
+    course_name: str
+    last_timestamp_sec: float
+    last_timestamp_formatted: str
+    duration_sec: float
+    duration_formatted: str
+    progress_percent: float
+    completed: bool
+    updated_at: int
+    updated_at_relative: str
+
+
+class RecordWatchRequest(BaseModel):
+    session_id: str
+    video_id: str
+    title: str
+    course_name: str
+    current_timestamp_sec: float
+    duration_sec: float
+    completed: Optional[bool] = False
+
+
+class AchievementItem(BaseModel):
+    id: str
+    badge_key: str
+    title: str
+    description: str
+    icon: str
+    tier: str  # bronze, silver, gold, platinum
+    is_unlocked: bool
+    unlocked_at: Optional[int] = None
+    progress_percent: int
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserProfile
+

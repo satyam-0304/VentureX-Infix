@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LearnLoop - Interactive Learning Workspace</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: CustomStyles -->
+<style data-purpose="custom-scrollbars">
+    /* Subtle sleek scrollbar for panels */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+  </style>
+<style data-purpose="ambient-canvas">
+    /* Subtle ambient gradient mesh backdrop */
+    body {
+      background: radial-gradient(circle at 10% 15%, #f5eefb 0%, transparent 40%),
+                  radial-gradient(circle at 90% 85%, #fdf2f7 0%, transparent 45%),
+                  radial-gradient(circle at 50% 50%, #f7f5fd 0%, #efeaf8 100%);
+      min-height: 100vh;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake-animation {
+      animation: shake 0.35s ease-in-out;
+    }
+  </style>
+<!-- END: CustomStyles -->
+</head>
+<body class="font-sans antialiased text-slate-800 p-4 lg:p-6 flex items-center justify-center min-h-screen">
+<!-- BEGIN: ApplicationShell -->
+<div class="w-full max-w-[1440px] h-[920px] bg-white/90 backdrop-blur-xl rounded-[28px] shadow-2xl border border-white/60 flex overflow-hidden relative" data-purpose="desktop-app-container">
+<!-- BEGIN: SessionHistorySidebar -->
+<aside class="w-[70px] transition-all duration-300 ease-in-out bg-[#0f141c] flex flex-col items-center py-5 justify-between shrink-0 select-none z-20 relative overflow-hidden" data-purpose="session-sidebar" id="mainSidebar">
+<!-- Top Section: App Glyph & Session Shortcuts -->
+<div class="flex flex-col items-center w-full">
+<div class="flex items-center justify-between w-full px-3 mb-4">
+<!-- Brand Icon Glyph -->
+<a class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform shrink-0" href="#" title="LearnLoop Home">
+<svg class="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M12 12c-2-2.5-4-4-6.5-4A4.5 4.5 0 1 0 10 12.5L12 12z"></path>
+<path d="M12 12c2 2.5 4 4 6.5 4a4.5 4.5 0 1 0-4.5-4.5L12 12z"></path>
+</svg>
+</a>
+<!-- Sidebar Title visible when expanded -->
+<span class="hidden text-white font-bold text-sm tracking-tight pl-2 whitespace-nowrap overflow-hidden" id="sidebarBrandText">LearnLoop</span>
+<button class="text-slate-400 hover:text-white p-1 rounded-md transition-colors ml-auto" id="toggleSidebarBtn" title="Toggle Sidebar Width">
+<svg class="w-4 h-4 pointer-events-none transition-transform duration-300" fill="none" id="sidebarToggleIcon" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="9 18 15 12 9 6"></polyline>
+</svg>
+</button>
+</div>
+<!-- Divider -->
+<div class="w-full px-3 mb-3">
+<div class="w-full h-[1px] bg-slate-800"></div>
+</div>
+<!-- Live Search field (visible in expanded mode) -->
+<div class="hidden w-full px-3 mb-3" id="sidebarSearchContainer">
+<div class="relative w-full">
+<input class="w-full bg-slate-900 border border-slate-700/80 rounded-lg text-xs text-white placeholder-slate-500 pl-7 pr-2 py-1.5 focus:outline-none focus:border-indigo-500" id="sidebarSearchInput" placeholder="Filter courses..." type="text"/>
+<svg class="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+</svg>
+</div>
+</div>
+<!-- Session List Container -->
+<nav aria-label="Course Sessions" class="flex flex-col items-center space-y-2 w-full px-2 max-h-[520px] overflow-y-auto" id="sessionsListContainer">
+<!-- Populated dynamically by JS -->
+</nav>
+<!-- Add New Learning Session Button -->
+<div class="w-full px-2 mt-2 flex justify-center">
+<button class="w-11 h-9 rounded-lg border border-dashed border-slate-700 text-slate-400 flex items-center justify-center hover:border-slate-400 hover:text-white transition-colors group shrink-0" id="addNewSessionBtn" title="Start New Session">
+<svg class="w-4 h-4 pointer-events-none group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" viewbox="0 0 24 24">
+<line x1="12" x2="12" y1="5" y2="19"></line>
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+</button>
+</div>
+</div>
+<!-- Bottom Controls: Appearance Toggle & Settings -->
+<div class="flex flex-col items-center space-y-3 w-full px-2">
+<!-- Light / Dark Mode Segmented Pill -->
+<div class="bg-slate-800/90 p-1 rounded-xl flex flex-col space-y-1">
+<button class="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors" id="themeLightBtn" title="Light theme active">
+<svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="5"></circle>
+<line x1="12" x2="12" y1="1" y2="3"></line>
+<line x1="12" x2="12" y1="21" y2="23"></line>
+<line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+<line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+<line x1="1" x2="3" y1="12" y2="12"></line>
+<line x1="21" x2="23" y1="12" y2="12"></line>
+<line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+<line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+</svg>
+</button>
+<button class="w-7 h-7 rounded-lg text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" id="themeDarkBtn" title="Dark mode">
+<svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+</svg>
+</button>
+</div>
+<!-- Sidebar Collapse / Settings -->
+<button class="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-300 flex items-center justify-center transition-colors cursor-pointer" title="Platform Settings">
+<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="3"></circle>
+<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+</svg>
+</button>
+</div>
+</aside>
+<!-- END: SessionHistorySidebar -->
+<!-- BEGIN: MainWorkspace -->
+<div class="flex-1 flex flex-col h-full overflow-hidden bg-[#faf9fe]" data-purpose="workspace-content">
+<!-- BEGIN: WorkspaceTopNav -->
+<header class="h-[68px] px-8 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+<!-- Logo Branding -->
+<div class="flex items-center space-x-3">
+<img alt="LearnLoop Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida/ALJJyrC7rsOuZlebkZjljPr0E0Bl5it6asVt3Ldcne3uONY_WApquzQxXW2aRleSs5P6lJrci6vC_0VVuSvaMIceSB4x25YIcWYMc7Xy7H4TKyMTXQqxfNSh2VYvRV3M0OjP_O9HXdhXRMAH_lRgfCiyaPBkV7MOdRY1w19kMhFuMB1CT_hqd31-Bf5HMiwA2r8gElN2i1uNj_Mm-SYY8HvnGoirn8bwMjsn8p-kiTAAwApI"/>
+</div>
+<!-- Center Pill Nav Tabs -->
+<nav aria-label="Main Navigation" class="flex items-center space-x-1.5 bg-slate-100/80 p-1 rounded-full text-xs font-semibold text-slate-600">
+<a class="px-4 py-1.5 rounded-full hover:text-slate-900 transition-colors" href="#">Dashboard</a>
+<a class="px-4 py-1.5 rounded-full hover:text-slate-900 transition-colors" href="#">Learning Hub</a>
+<a class="px-4 py-1.5 rounded-full bg-slate-900 text-white shadow-sm transition-all" href="#">Practice</a>
+<a class="px-4 py-1.5 rounded-full hover:text-slate-900 transition-colors" href="#">Progress</a>
+</nav>
+<!-- Right Side Utility Controls & Student Profile -->
+<div class="flex items-center space-x-4">
+<!-- Quick Search Button -->
+<button class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/80 flex items-center justify-center text-slate-600 transition-colors" title="Search lessons">
+<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+</svg>
+</button>
+<!-- Notification Bell with Notification Badge -->
+<button class="relative w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/80 flex items-center justify-center text-slate-600 transition-colors" title="Notifications">
+<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+</svg>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+</button>
+<!-- User Profile Avatar & Name -->
+<div class="flex items-center space-x-3 pl-2 border-l border-slate-200">
+<img alt="Simona Biles avatar" class="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH4ygVi0FQOybDk7rdMoeWZXuIEwiZzMjiLCR-8Hm0OmzZbSNbCfRJf3rFPtua1P9TpxLcfe3UfMmfBlAcADSOA4VERnRASc-TxBKVRvt0SmqaMVDjl4mbp2awWxu3_PyDcgIJ9aSpUvAT4y33KAAE2MY7tHuPzuE1pAQogJkfrdPHfgp10HK8RuLmhrpSa3ibbg2AtJcpQH8l0yrNIDBp4Icp8_tgf9E9A2xtxo4"/>
+<div class="hidden xl:block text-left text-xs leading-tight">
+<div class="font-semibold text-slate-800">Simona Biles</div>
+<div class="text-slate-400 font-normal">simona@lexie.com</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: WorkspaceTopNav -->
+<!-- BEGIN: ScrollablePageContent -->
+<main class="flex-1 overflow-y-auto px-8 py-5">
+<!-- Header & Breadcrumbs Section -->
+<div class="mb-5">
+<!-- Breadcrumb navigation with back button -->
+<div class="flex items-center space-x-2 text-xs text-slate-500 mb-2">
+<button class="p-1 rounded-md hover:bg-slate-200/70 text-slate-600 transition-colors" title="Go back">
+<svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<polyline points="15 18 9 12 15 6"></polyline>
+</svg>
+</button>
+<span class="hover:underline cursor-pointer">Courses</span>
+<span>/</span>
+<span class="hover:underline cursor-pointer" id="breadcrumbCourse">Engineering Chemistry</span>
+<span>/</span>
+<span class="hover:underline cursor-pointer" id="breadcrumbTopic">Polymers</span>
+<span>/</span>
+<span class="text-slate-800 font-medium">Video Lesson 04</span>
+</div>
+<!-- Title and Metadata Info -->
+<div class="flex flex-wrap items-baseline justify-between gap-2">
+<div>
+<h1 class="text-2xl font-bold tracking-tight text-slate-900" id="lessonMainTitle">Watch your lesson</h1>
+<p class="text-xs text-slate-500 mt-0.5">Learn actively, understand deeply.</p>
+</div>
+<!-- Lesson Metadata Badges -->
+<div class="flex items-center space-x-3 text-xs text-slate-600 font-medium">
+<div class="flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-full border border-slate-200/80 shadow-xs">
+<svg class="w-3.5 h-3.5 text-indigo-500 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+<span id="metaDuration">18 min</span>
+</div>
+<div class="flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-full border border-slate-200/80 shadow-xs">
+<svg class="w-3.5 h-3.5 text-emerald-500 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 11l3 3L22 4"></path>
+<path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+</svg>
+<span id="metaTasks">5 tasks</span>
+</div>
+<div class="flex items-center space-x-1 bg-white px-2.5 py-1 rounded-full border border-slate-200/80 shadow-xs">
+<span class="text-amber-400">★</span>
+<span>4.9</span>
+<span class="text-slate-400 font-normal">(142 reviews)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 2-Column Responsive Workspace Grid (~65% / ~35%) -->
+<div class="grid grid-cols-12 gap-6 items-start">
+<!-- BEGIN: LeftColumn (Video Player & Notes) -->
+<div class="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col space-y-5">
+<!-- Video Container with 16:9 Aspect Ratio and Overlay -->
+<div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 shadow-xl border border-slate-200/80 group select-none" data-purpose="video-player-container" id="videoContainer">
+<!-- Real HTML5 Video -->
+<video class="w-full h-full object-cover" id="lectureVideo" playsinline="" poster="https://lh3.googleusercontent.com/aida-public/AB6AXuDFJVrl_Xru8fqMdzEDJE3EM4k3zpBMz4H5jwdEUzAMkO_rAC5yMGdX2NzMez72-Jg7cPgpw9xqw_87neaSAffbiBGuQ7ThDq2hxFAtAtxv-X-wQ_lt7OPTTkCL2BCX_jp_dJ-gCCHITACIos7DQW04R3G3Za5OGCARJNEgNmPhNrwYKPoENfT2kTyZoONS1h7ShPiIUNucMPDaZc0OagyDNRtsgSfeW5n6RJd6sfyXudWfHe0q5Ju8" preload="metadata">
+<source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4"/>
+            Your browser does not support the video tag.
+          </video>
+<!-- Subtle top shadow vignette -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none"></div>
+<!-- Closed Captions Overlay Display -->
+<div class="absolute bottom-16 inset-x-8 text-center pointer-events-none transition-opacity duration-300" id="captionsOverlay">
+<p class="inline-block bg-black/75 backdrop-blur-sm text-white px-3 py-1 rounded text-xs tracking-wide" id="captionsText">
+              "Polymers are formed by repeating monomer units that establish covalent bonds."
+            </p>
+</div>
+<!-- Top Left Interactive Timestamp Notification Cue -->
+<div class="absolute top-4 left-4 z-10 flex items-center space-x-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs cursor-pointer hover:bg-black/80 transition-all" id="activeTaskCue">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="font-medium" id="activeCueText">Task 1 active at this timestamp</span>
+</div>
+<!-- Interactive Floating Video Prompt Sync Badge -->
+<button class="absolute top-4 right-4 bg-indigo-600/90 hover:bg-indigo-600 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-medium flex items-center space-x-1.5 shadow-md cursor-pointer transition-all" id="interactiveModeBtn">
+<svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+</svg>
+<span id="interactiveModeLabel">Interactive Mode: ON</span>
+</button>
+<!-- Bottom Video Controls Overlay Bar -->
+<div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-slate-950/95 via-slate-900/80 to-transparent flex flex-col space-y-2 text-white">
+<!-- Timeline Scrubber Bar with milestone marks -->
+<div class="relative w-full h-2 bg-white/20 hover:h-2.5 rounded-full cursor-pointer flex items-center transition-all group/scrub" id="timelineContainer">
+<!-- Played Progress -->
+<div class="h-full bg-gradient-to-r from-indigo-500 to-purple-400 rounded-full w-[36%] relative pointer-events-none" id="videoProgressBar">
+<!-- Scrubber Knob -->
+<span class="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md scale-100 group-hover/scrub:scale-125 transition-transform pointer-events-none"></span>
+</div>
+<!-- Milestone Marker Task 1 (at 36%) -->
+<button class="milestone-marker absolute left-[36%] w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-white -top-[0px] hover:scale-150 transition-transform cursor-pointer" data-timestamp="60" title="Jump to Task 1 (01:00)"></button>
+<!-- Milestone Marker Task 2 (at 52%) -->
+<button class="milestone-marker absolute left-[52%] w-2 h-2 rounded-full bg-amber-400 -top-[0px] hover:scale-150 transition-transform cursor-pointer" data-timestamp="120" title="Jump to Task 2 (02:00)"></button>
+<!-- Milestone Marker Task 3 (at 70%) -->
+<button class="milestone-marker absolute left-[70%] w-2 h-2 rounded-full bg-indigo-300 -top-[0px] hover:scale-150 transition-transform cursor-pointer" data-timestamp="180" title="Jump to Task 3 (03:00)"></button>
+</div>
+<!-- Video Controls Row -->
+<div class="flex items-center justify-between text-xs pt-1">
+<!-- Play / Pause & Time -->
+<div class="flex items-center space-x-3.5">
+<button class="hover:text-indigo-400 transition-colors p-1 cursor-pointer" id="playPauseBtn" title="Play / Pause">
+<svg class="w-5 h-5 fill-current pointer-events-none" id="playPauseIcon" viewbox="0 0 24 24">
+<!-- Default Pause Icon -->
+<rect height="16" rx="1" width="4" x="6" y="4"></rect>
+<rect height="16" rx="1" width="4" x="14" y="4"></rect>
+</svg>
+</button>
+<!-- Time Display -->
+<span class="font-mono text-slate-300 font-medium" id="timeDisplay">06:42 / 18:30</span>
+<!-- Volume Control Slider -->
+<div class="flex items-center space-x-1.5 text-slate-300 hover:text-white">
+<button class="cursor-pointer" id="volumeMuteBtn" title="Mute/Unmute">
+<svg class="w-4 h-4 pointer-events-none" fill="none" id="volumeIcon" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+</svg>
+</button>
+<input class="w-14 h-1 accent-indigo-500 bg-white/30 rounded-full appearance-none cursor-pointer" id="volumeSlider" max="1" min="0" step="0.05" type="range" value="0.8"/>
+</div>
+</div>
+<!-- Right Side Video Controls -->
+<div class="flex items-center space-x-3">
+<!-- CC Closed Captions Pill -->
+<button class="px-1.5 py-0.5 rounded bg-indigo-600 text-[10px] font-bold tracking-wider text-white cursor-pointer hover:bg-indigo-500 transition-colors" id="captionsToggleBtn" title="Toggle Captions">
+                  CC
+                </button>
+<!-- Playback Speed -->
+<button class="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] font-semibold tracking-wide cursor-pointer transition-colors" id="playbackSpeedBtn" title="Change Playback Speed">
+                  1.0x
+                </button>
+<!-- Settings -->
+<button class="hover:text-indigo-400 transition-colors cursor-pointer" id="videoSettingsBtn" title="Playback Quality &amp; Settings">
+<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="3"></circle>
+<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+</svg>
+</button>
+<!-- Fullscreen -->
+<button class="hover:text-indigo-400 transition-colors cursor-pointer" id="fullscreenBtn" title="Toggle Fullscreen">
+<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Tabbed lecture notes & objectives card -->
+<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm" data-purpose="lecture-details">
+<!-- Tabs Navigation -->
+<div class="flex items-center space-x-6 border-b border-slate-100 pb-3 text-xs font-semibold">
+<button class="tab-btn text-indigo-600 border-b-2 border-indigo-600 pb-3 -mb-3 transition-colors cursor-pointer" data-tab="overview">Overview</button>
+<button class="tab-btn text-slate-400 hover:text-slate-700 pb-3 -mb-3 border-b-2 border-transparent transition-colors cursor-pointer" data-tab="notes">My Notes (<span id="notesCountBadge">3</span>)</button>
+<button class="tab-btn text-slate-400 hover:text-slate-700 pb-3 -mb-3 border-b-2 border-transparent transition-colors cursor-pointer" data-tab="transcript">Transcript</button>
+<button class="tab-btn text-slate-400 hover:text-slate-700 pb-3 -mb-3 border-b-2 border-transparent transition-colors cursor-pointer" data-tab="discussion">Discussion</button>
+</div>
+<!-- TAB PANEL: Overview -->
+<div class="tab-panel pt-4 space-y-4" id="tabPanelOverview">
+<p class="text-xs text-slate-600 leading-relaxed">
+              In this interactive lecture, <span class="font-medium text-slate-800">Professor Vance</span> introduces synthetic and natural polymers, exploring how covalent bonding in repeating monomer units determines material elasticity and strength.
+            </p>
+<!-- 3 Key Objectives Grid -->
+<div>
+<h4 class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Key Learning Objectives</h4>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-2">
+<div class="w-5 h-5 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+</div>
+<span class="text-xs text-slate-700 font-medium">Monomer polymerization mechanics</span>
+</div>
+<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-2">
+<div class="w-5 h-5 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+</div>
+<span class="text-xs text-slate-700 font-medium">Thermoplastic vs Thermosetting</span>
+</div>
+<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-2">
+<div class="w-5 h-5 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+</div>
+<span class="text-xs text-slate-700 font-medium">Synthetic biomaterial applications</span>
+</div>
+</div>
+</div>
+<!-- Vocabulary chips with pronunciation sound synthesis -->
+<div class="pt-1">
+<h4 class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Core Vocabulary (Click to Listen)</h4>
+<div class="flex flex-wrap gap-2">
+<button class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition-colors cursor-pointer" onclick="speakWord('Monomer')">
+<span>Monomer</span>
+<svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+</button>
+<button class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition-colors cursor-pointer" onclick="speakWord('Polymerization')">
+<span>Polymerization</span>
+<svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+</button>
+<button class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition-colors cursor-pointer" onclick="speakWord('Elastomer')">
+<span>Elastomer</span>
+<svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+</button>
+<button class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition-colors cursor-pointer" onclick="speakWord('Cross-linking')">
+<span>Cross-linking</span>
+<svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+</button>
+</div>
+</div>
+</div>
+<!-- TAB PANEL: My Notes -->
+<div class="tab-panel hidden pt-4 space-y-4" id="tabPanelNotes">
+<!-- Add note form -->
+<div class="flex flex-col space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+<textarea class="w-full text-xs p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500 resize-none" id="noteInput" placeholder="Jot down a quick thought or key takeaway at current timestamp..." rows="2"></textarea>
+<div class="flex items-center justify-between">
+<span class="text-[11px] text-indigo-600 font-mono font-medium" id="noteTimestampTag">Timestamp: 06:42</span>
+<button class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow transition-colors flex items-center space-x-1" id="addNoteBtn">
+<span>Save Note</span>
+</button>
+</div>
+</div>
+<!-- Notes list -->
+<div class="space-y-2 max-h-56 overflow-y-auto pr-1" id="notesContainer">
+<!-- Dynamically populated notes -->
+</div>
+</div>
+<!-- TAB PANEL: Transcript -->
+<div class="tab-panel hidden pt-4 space-y-2 max-h-64 overflow-y-auto pr-1" id="tabPanelTranscript">
+<div class="transcript-line p-2 rounded-lg hover:bg-indigo-50/50 cursor-pointer transition-colors flex items-start space-x-3" onclick="seekVideo(10)">
+<span class="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5">00:10</span>
+<p class="text-xs text-slate-700 leading-snug">Welcome everyone to Engineering Chemistry. Today we delve into polymers and macromolecular structures.</p>
+</div>
+<div class="transcript-line p-2 rounded-lg hover:bg-indigo-50/50 cursor-pointer transition-colors flex items-start space-x-3" onclick="seekVideo(60)">
+<span class="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5">01:00</span>
+<p class="text-xs text-slate-700 leading-snug">Notice how polymers are created by long chains of small repeating subunits named monomers.</p>
+</div>
+<div class="transcript-line p-2 rounded-lg hover:bg-indigo-50/50 cursor-pointer transition-colors flex items-start space-x-3" onclick="seekVideo(120)">
+<span class="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5">02:00</span>
+<p class="text-xs text-slate-700 leading-snug">Let's distinguish between naturally occurring polymers like cellulose versus synthetics like nylon.</p>
+</div>
+<div class="transcript-line p-2 rounded-lg hover:bg-indigo-50/50 cursor-pointer transition-colors flex items-start space-x-3" onclick="seekVideo(180)">
+<span class="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5">03:00</span>
+<p class="text-xs text-slate-700 leading-snug">Cross-linking chemically binds polymer chains into 3D structural networks, altering elasticity.</p>
+</div>
+<div class="transcript-line p-2 rounded-lg hover:bg-indigo-50/50 cursor-pointer transition-colors flex items-start space-x-3" onclick="seekVideo(240)">
+<span class="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5">04:00</span>
+<p class="text-xs text-slate-700 leading-snug">In modern aerospace and biomedical engineering, high-performance thermoplastics replace heavy metals.</p>
+</div>
+</div>
+<!-- TAB PANEL: Discussion -->
+<div class="tab-panel hidden pt-4 space-y-3" id="tabPanelDiscussion">
+<div class="flex items-center space-x-2">
+<input class="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500" id="discussionInput" placeholder="Ask a question about this segment..." type="text"/>
+<button class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors" id="postDiscussionBtn">Post</button>
+</div>
+<div class="space-y-2 max-h-56 overflow-y-auto pr-1" id="discussionList">
+<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-xs font-bold text-slate-800">Marcus Chen</span>
+<span class="text-[10px] text-slate-400">14m ago</span>
+</div>
+<p class="text-xs text-slate-600 mt-0.5">Does cross-linking always make a polymer brittle, or can it remain flexible?</p>
+</div>
+<button class="upvote-btn flex items-center space-x-1 text-slate-400 hover:text-indigo-600 text-xs font-semibold px-2 py-1 rounded bg-white border border-slate-200" onclick="handleUpvote(this)">
+<span>▲</span>
+<span class="count">6</span>
+</button>
+</div>
+<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-xs font-bold text-slate-800">Aisha Patel</span>
+<span class="text-[10px] text-slate-400">2h ago</span>
+</div>
+<p class="text-xs text-slate-600 mt-0.5">Vulcanization of rubber is such a neat real-world example of sulfur cross-links!</p>
+</div>
+<button class="upvote-btn flex items-center space-x-1 text-slate-400 hover:text-indigo-600 text-xs font-semibold px-2 py-1 rounded bg-white border border-slate-200" onclick="handleUpvote(this)">
+<span>▲</span>
+<span class="count">11</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END: LeftColumn -->
+<!-- BEGIN: RightColumn (Interactive Learning Tasks Sheet) -->
+<div class="col-span-12 lg:col-span-5 xl:col-span-4 flex flex-col">
+<div class="bg-white rounded-2xl border border-slate-100 shadow-xl p-5 flex flex-col space-y-4 relative" data-purpose="tasks-panel">
+<!-- Panel Header with Progress Ring -->
+<div class="flex items-center justify-between border-b border-slate-100 pb-3">
+<div>
+<h3 class="font-bold text-base text-slate-900">Learning Activities</h3>
+<p class="text-xs text-slate-400">Synchronized with lecture video</p>
+</div>
+<!-- Progress Ring Badge -->
+<div class="flex items-center space-x-2">
+<div class="relative w-8 h-8 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-emerald-500 transition-all duration-500" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" id="progressCirclePath" stroke="currentColor" stroke-dasharray="20, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="absolute text-[10px] font-bold text-slate-700" id="progressPercentLabel">20%</span>
+</div>
+<span class="text-xs font-semibold text-slate-700" id="progressSummaryLabel">1/5 Done</span>
+</div>
+</div>
+<!-- Expandable Tasks Accordion Stack -->
+<div class="space-y-3" id="tasksAccordion">
+<!-- TASK 1: Understanding Check -->
+<div class="rounded-xl border border-indigo-100 bg-indigo-50/20 p-4 transition-all" id="taskCard1">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskAccordion('taskCard1')">
+<div class="flex items-center space-x-2">
+<span class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center" id="task1BadgeIcon">1</span>
+<span class="text-xs font-bold text-slate-800">Understanding Check</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold" id="task1StatusPill">Active</span>
+<svg class="accordion-arrow w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</div>
+<!-- Task 1 Content -->
+<div class="task-body pt-3" id="task1Body">
+<p class="text-xs font-semibold text-slate-800 mb-3">
+                  What is the primary characteristic of polymers?
+                </p>
+<div class="space-y-2 mb-3" id="task1Options">
+<!-- Option A -->
+<label class="task-option flex items-center space-x-2.5 p-2 rounded-lg border-2 border-emerald-500 bg-emerald-50/70 text-xs cursor-pointer transition-all" data-correct="true">
+<input checked="" class="hidden" name="task1_opt" type="radio" value="A"/>
+<div class="opt-bullet w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+</div>
+<span class="text-slate-800 font-medium">They consist of repeating monomer units.</span>
+</label>
+<!-- Option B -->
+<label class="task-option flex items-center space-x-2.5 p-2 rounded-lg border border-slate-200 bg-white text-xs opacity-80 cursor-pointer hover:border-slate-300" data-correct="false">
+<input class="hidden" name="task1_opt" type="radio" value="B"/>
+<div class="opt-bullet w-4 h-4 rounded-full border border-slate-300 shrink-0"></div>
+<span class="text-slate-600">They are always strictly metallic.</span>
+</label>
+<!-- Option C -->
+<label class="task-option flex items-center space-x-2.5 p-2 rounded-lg border border-slate-200 bg-white text-xs opacity-80 cursor-pointer hover:border-slate-300" data-correct="false">
+<input class="hidden" name="task1_opt" type="radio" value="C"/>
+<div class="opt-bullet w-4 h-4 rounded-full border border-slate-300 shrink-0"></div>
+<span class="text-slate-600">They contain only one single atom.</span>
+</label>
+<!-- Option D -->
+<label class="task-option flex items-center space-x-2.5 p-2 rounded-lg border border-slate-200 bg-white text-xs opacity-80 cursor-pointer hover:border-slate-300" data-correct="false">
+<input class="hidden" name="task1_opt" type="radio" value="D"/>
+<div class="opt-bullet w-4 h-4 rounded-full border border-slate-300 shrink-0"></div>
+<span class="text-slate-600">They cannot form continuous chains.</span>
+</label>
+</div>
+<!-- Explanation Card Callout -->
+<div class="p-2.5 rounded-lg bg-amber-50/90 border border-amber-200 text-xs mb-3 flex items-start space-x-2" id="task1Explanation">
+<span class="text-amber-600 text-sm mt-0.5">💡</span>
+<div>
+<span class="font-bold text-amber-900 block text-[11px]">Explanation:</span>
+<p class="text-amber-800 text-[11px] leading-relaxed">
+                      Polymers are large macromolecules formed by covalently linking many small, repeating structural units called monomers.
+                    </p>
+</div>
+</div>
+<!-- Feedback alert when error -->
+<div class="hidden mb-3 p-2 rounded-lg text-[11px] bg-red-50 text-red-700 border border-red-200" id="task1Feedback">
+                  Incorrect option selected. Remember polymers are chains of subunits!
+                </div>
+<!-- Continue Action Button -->
+<button class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow transition-colors flex items-center justify-center space-x-1.5 cursor-pointer" id="task1SubmitBtn">
+<span>Continue to Task 2</span>
+<svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+</div>
+</div>
+<!-- TASK 2: Quick Quiz: Synthetic vs Natural -->
+<div class="rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors p-3" id="taskCard2">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskAccordion('taskCard2')">
+<div class="flex items-center space-x-2.5">
+<span class="w-5 h-5 rounded-full border border-slate-300 text-slate-600 text-[11px] font-medium flex items-center justify-center" id="task2BadgeIcon">2</span>
+<span class="text-xs font-medium text-slate-700">Quick Quiz: Synthetic vs Natural</span>
+</div>
+<div class="flex items-center space-x-2 text-xs text-slate-400">
+<span id="task2StatusPill">2 min</span>
+<svg class="accordion-arrow w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</div>
+<div class="task-body hidden pt-3 mt-2 border-t border-slate-200/60" id="task2Body">
+<p class="text-xs text-slate-700 font-semibold mb-2">Which of these is a naturally occurring biopolymer?</p>
+<div class="space-y-1.5 mb-3" id="task2Options">
+<label class="task2-opt flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-white text-xs cursor-pointer hover:border-indigo-400" data-correct="true">
+<input class="accent-indigo-600" name="task2_radio" type="radio" value="cellulose"/>
+<span class="text-slate-700">Cellulose / Starch</span>
+</label>
+<label class="task2-opt flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-white text-xs cursor-pointer hover:border-indigo-400" data-correct="false">
+<input class="accent-indigo-600" name="task2_radio" type="radio" value="nylon"/>
+<span class="text-slate-700">Nylon-6,6</span>
+</label>
+<label class="task2-opt flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-white text-xs cursor-pointer hover:border-indigo-400" data-correct="false">
+<input class="accent-indigo-600" name="task2_radio" type="radio" value="teflon"/>
+<span class="text-slate-700">PTFE (Teflon)</span>
+</label>
+</div>
+<button class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors" id="task2SubmitBtn">
+                  Confirm Answer
+                </button>
+</div>
+</div>
+<!-- TASK 3: Concept Explanation: Cross-linking -->
+<div class="rounded-xl border border-slate-100 bg-white transition-all p-3" id="taskCard3">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskAccordion('taskCard3')">
+<div class="flex items-center space-x-2.5">
+<span class="w-5 h-5 rounded-full bg-slate-100 text-slate-400 text-[11px] font-medium flex items-center justify-center" id="task3BadgeIcon">3</span>
+<span class="text-xs font-medium text-slate-700">Concept Explanation: Cross-linking</span>
+</div>
+<div class="flex items-center space-x-1 text-[11px] text-slate-400">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+<span id="task3StatusPill">09:15</span>
+<svg class="accordion-arrow w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</div>
+<div class="task-body hidden pt-3 mt-2 border-t border-slate-100 text-xs text-slate-600 space-y-2" id="task3Body">
+<p>Observe how sulfur bridges link polyisoprene strands during vulcanization to increase tensile durability.</p>
+<button class="text-indigo-600 hover:underline font-medium text-xs flex items-center space-x-1" onclick="seekVideo(180)">
+<span>Jump video to Cross-linking topic (03:00)</span>
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+</div>
+</div>
+<!-- TASK 4: Real-world Application Challenge -->
+<div class="rounded-xl border border-slate-100 bg-white transition-all p-3" id="taskCard4">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskAccordion('taskCard4')">
+<div class="flex items-center space-x-2.5">
+<span class="w-5 h-5 rounded-full bg-slate-100 text-slate-400 text-[11px] font-medium flex items-center justify-center" id="task4BadgeIcon">4</span>
+<span class="text-xs font-medium text-slate-700">Real-world Application Challenge</span>
+</div>
+<div class="flex items-center space-x-1 text-[11px] text-slate-400">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+<span id="task4StatusPill">Locked</span>
+<svg class="accordion-arrow w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</div>
+<div class="task-body hidden pt-3 mt-2 border-t border-slate-100 text-xs text-slate-600" id="task4Body">
+<p>Synthesize biomimetic hydrogels for drug delivery stents with targeted dissolution triggers.</p>
+</div>
+</div>
+<!-- TASK 5: Lesson Revision & Summary -->
+<div class="rounded-xl border border-slate-100 bg-white transition-all p-3" id="taskCard5">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskAccordion('taskCard5')">
+<div class="flex items-center space-x-2.5">
+<span class="w-5 h-5 rounded-full bg-slate-100 text-slate-400 text-[11px] font-medium flex items-center justify-center" id="task5BadgeIcon">5</span>
+<span class="text-xs font-medium text-slate-700">Lesson Revision &amp; Summary</span>
+</div>
+<div class="flex items-center space-x-1 text-[11px] text-slate-400">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+<span id="task5StatusPill">Locked</span>
+<svg class="accordion-arrow w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+</div>
+<div class="task-body hidden pt-3 mt-2 border-t border-slate-100 text-xs text-slate-600" id="task5Body">
+<p>Comprehensive end-of-module assessment covering addition and condensation mechanisms.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END: RightColumn -->
+</div>
+</main>
+<!-- END: ScrollablePageContent -->
+<!-- BEGIN: FloatingAITutorWidget Button -->
+<div class="absolute bottom-6 right-8 z-30" data-purpose="ai-tutor-dock">
+<button class="group flex items-center space-x-2.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-4 py-2.5 rounded-full shadow-2xl border border-indigo-500/30 hover:shadow-indigo-500/25 hover:scale-[1.02] transition-all cursor-pointer" id="openAiTutorBtn">
+<div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-400 flex items-center justify-center text-white shadow-sm">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
+</svg>
+</div>
+<span class="text-xs font-semibold tracking-wide">Ask LearnLoop AI Tutor</span>
+<span class="bg-indigo-500/30 border border-indigo-400/40 text-[10px] font-mono px-1.5 py-0.5 rounded text-indigo-200">⌘K</span>
+</button>
+</div>
+<!-- END: FloatingAITutorWidget Button -->
+<!-- BEGIN: AI Tutor Modal / Drawer -->
+<div class="hidden fixed bottom-6 right-8 w-96 max-w-[calc(100vw-3rem)] h-[480px] bg-slate-900/95 backdrop-blur-xl border border-indigo-500/30 rounded-2xl shadow-2xl z-40 flex flex-col overflow-hidden text-white transition-all" id="aiTutorModal">
+<!-- Header -->
+<div class="px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs shadow-md">
+          ✨
+        </div>
+<div>
+<h4 class="text-xs font-bold leading-tight">LearnLoop AI Tutor</h4>
+<span class="text-[10px] text-emerald-400 flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+<span>Online &amp; Active</span>
+</span>
+</div>
+</div>
+<div class="flex items-center space-x-1">
+<button class="text-slate-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer" id="closeAiTutorBtn" title="Close tutor">
+<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</div>
+</div>
+<!-- Messages Scroll Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs" id="aiChatMessages">
+<div class="flex items-start space-x-2">
+<div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] shrink-0 mt-0.5">LL</div>
+<div class="bg-slate-800/80 p-2.5 rounded-2xl rounded-tl-sm border border-slate-700/60 max-w-[85%] text-slate-200 leading-relaxed">
+          Hello Simona! I'm here alongside your Polymers lecture. Ask me anything about monomers, elastomer mechanics, or quiz help!
+        </div>
+</div>
+</div>
+<!-- Typing indicator (hidden by default) -->
+<div class="hidden px-4 py-1 text-[11px] text-indigo-400 flex items-center space-x-2" id="aiTypingIndicator">
+<span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
+<span>AI Tutor is thinking...</span>
+</div>
+<!-- Input Field Footer -->
+<div class="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center space-x-2">
+<input class="flex-1 bg-slate-800/90 text-xs px-3 py-2 rounded-xl text-white placeholder-slate-400 border border-slate-700 focus:outline-none focus:border-indigo-500" id="aiChatInput" placeholder="Ask e.g. What is vulcanization?..." type="text"/>
+<button class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl transition-colors cursor-pointer" id="sendAiMessageBtn" title="Send message">
+<svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+</button>
+</div>
+</div>
+<!-- END: AI Tutor Modal / Drawer -->
+<!-- Modal for Creating New Session -->
+<div class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" id="newSessionModal">
+<div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-sm text-slate-900">Add Learning Session</h3>
+<button class="text-slate-400 hover:text-slate-600" id="closeNewSessionModal">✕</button>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1">Course Name</label>
+<input class="w-full text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-600" id="newCourseName" placeholder="e.g. Quantum Computing" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1">Abbreviation (2 Letters)</label>
+<input class="w-full uppercase text-xs p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-600 font-bold" id="newCourseAbbr" maxlength="2" placeholder="QC" type="text"/>
+</div>
+<div class="flex justify-end space-x-2 pt-2">
+<button class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100" id="cancelNewSession">Cancel</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800" id="confirmNewSession">Add Session</button>
+</div>
+</div>
+</div>
+</div>
+<!-- END: MainWorkspace -->
+</div>
+<!-- END: ApplicationShell -->
+<!-- BEGIN: Interactivity Script -->
+<script>
+  // DEFAULT INITIAL STATE & LOCALSTORAGE PERSISTENCE
+  const DEFAULT_SESSIONS = [
+    { code: 'CH', title: 'Chemistry Foundations' },
+    { code: 'PL', title: 'Polymers & Macromolecules' },
+    { code: 'OC', title: 'Organic Chemistry' },
+    { code: 'PY', title: 'Physics & Kinetics' },
+    { code: 'BC', title: 'Biochemistry' },
+    { code: 'EN', title: 'Materials Engineering' }
+  ];
+
+  const DEFAULT_NOTES = [
+    { id: 1, time: '01:14', text: 'Monomers bond via condensation or addition mechanisms.' },
+    { id: 2, time: '03:40', text: 'Cross-linking drastically restricts sliding of polymer chains.' },
+    { id: 3, time: '05:22', text: 'Thermosetting plastics cannot be remelted once cured.' }
+  ];
+
+  let sessions = JSON.parse(localStorage.getItem('learnloop_sessions')) || DEFAULT_SESSIONS;
+  let activeSessionCode = localStorage.getItem('learnloop_active_session') || 'PL';
+  let userNotes = JSON.parse(localStorage.getItem('learnloop_notes')) || DEFAULT_NOTES;
+  let progressState = JSON.parse(localStorage.getItem('learnloop_progress')) || {
+    completedCount: 1,
+    task1Done: true,
+    task2Done: false
+  };
+
+  let sidebarExpanded = false;
+  let playbackSpeed = 1.0;
+  let captionsEnabled = true;
+
+  // DOM Elements
+  const mainSidebar = document.getElementById('mainSidebar');
+  const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+  const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+  const sidebarBrandText = document.getElementById('sidebarBrandText');
+  const sidebarSearchContainer = document.getElementById('sidebarSearchContainer');
+  const sidebarSearchInput = document.getElementById('sidebarSearchInput');
+  const sessionsListContainer = document.getElementById('sessionsListContainer');
+  const addNewSessionBtn = document.getElementById('addNewSessionBtn');
+  const newSessionModal = document.getElementById('newSessionModal');
+  const closeNewSessionModal = document.getElementById('closeNewSessionModal');
+  const cancelNewSession = document.getElementById('cancelNewSession');
+  const confirmNewSession = document.getElementById('confirmNewSession');
+  const newCourseName = document.getElementById('newCourseName');
+  const newCourseAbbr = document.getElementById('newCourseAbbr');
+
+  // Video Elements
+  const lectureVideo = document.getElementById('lectureVideo');
+  const videoContainer = document.getElementById('videoContainer');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const playPauseIcon = document.getElementById('playPauseIcon');
+  const timelineContainer = document.getElementById('timelineContainer');
+  const videoProgressBar = document.getElementById('videoProgressBar');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const volumeSlider = document.getElementById('volumeSlider');
+  const volumeMuteBtn = document.getElementById('volumeMuteBtn');
+  const playbackSpeedBtn = document.getElementById('playbackSpeedBtn');
+  const captionsToggleBtn = document.getElementById('captionsToggleBtn');
+  const captionsOverlay = document.getElementById('captionsOverlay');
+  const captionsText = document.getElementById('captionsText');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+  // Tabs Elements
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabPanels = {
+    overview: document.getElementById('tabPanelOverview'),
+    notes: document.getElementById('tabPanelNotes'),
+    transcript: document.getElementById('tabPanelTranscript'),
+    discussion: document.getElementById('tabPanelDiscussion')
+  };
+  const notesCountBadge = document.getElementById('notesCountBadge');
+  const notesContainer = document.getElementById('notesContainer');
+  const noteInput = document.getElementById('noteInput');
+  const noteTimestampTag = document.getElementById('noteTimestampTag');
+  const addNoteBtn = document.getElementById('addNoteBtn');
+
+  // Task Elements
+  const progressCirclePath = document.getElementById('progressCirclePath');
+  const progressPercentLabel = document.getElementById('progressPercentLabel');
+  const progressSummaryLabel = document.getElementById('progressSummaryLabel');
+  const task1Options = document.querySelectorAll('#task1Options .task-option');
+  const task1SubmitBtn = document.getElementById('task1SubmitBtn');
+  const task1Feedback = document.getElementById('task1Feedback');
+  const task2SubmitBtn = document.getElementById('task2SubmitBtn');
+
+  // AI Tutor Elements
+  const openAiTutorBtn = document.getElementById('openAiTutorBtn');
+  const aiTutorModal = document.getElementById('aiTutorModal');
+  const closeAiTutorBtn = document.getElementById('closeAiTutorBtn');
+  const aiChatInput = document.getElementById('aiChatInput');
+  const sendAiMessageBtn = document.getElementById('sendAiMessageBtn');
+  const aiChatMessages = document.getElementById('aiChatMessages');
+  const aiTypingIndicator = document.getElementById('aiTypingIndicator');
+
+  // 1. SIDEBAR INTERACTIONS
+  function renderSessions(filter = '') {
+    sessionsListContainer.innerHTML = '';
+    const filtered = sessions.filter(s => 
+      s.title.toLowerCase().includes(filter.toLowerCase()) || 
+      s.code.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    filtered.forEach(session => {
+      const isActive = session.code === activeSessionCode;
+      const btn = document.createElement('button');
+      btn.className = `w-full flex items-center transition-all ${
+        sidebarExpanded ? 'px-3 py-2 justify-start space-x-3' : 'justify-center py-1'
+      } rounded-lg ${
+        isActive 
+          ? 'bg-white text-slate-900 font-bold shadow-md ring-2 ring-indigo-500/20' 
+          : 'text-slate-400 hover:bg-slate-800/80 hover:text-white font-medium'
+      }`;
+      btn.title = `${session.title} (${session.code})`;
+
+      if (!sidebarExpanded) {
+        btn.innerHTML = `<span class="w-11 h-9 rounded-lg flex items-center justify-center text-xs">${session.code}</span>`;
+      } else {
+        btn.innerHTML = `
+          <span class="w-7 h-7 rounded-md ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-800 text-slate-300'} text-xs font-bold flex items-center justify-center shrink-0">
+            ${session.code}
+          </span>
+          <span class="text-xs text-left truncate flex-1 ${isActive ? 'text-slate-900 font-semibold' : 'text-slate-300'}">
+            ${session.title}
+          </span>
+        `;
+      }
+
+      btn.addEventListener('click', () => {
+        activeSessionCode = session.code;
+        localStorage.setItem('learnloop_active_session', activeSessionCode);
+        document.getElementById('breadcrumbTopic').innerText = session.title.split(' ')[0];
+        renderSessions(sidebarSearchInput ? sidebarSearchInput.value : '');
+      });
+
+      sessionsListContainer.appendChild(btn);
+    });
+  }
+
+  function toggleSidebar() {
+    sidebarExpanded = !sidebarExpanded;
+    if (sidebarExpanded) {
+      mainSidebar.classList.remove('w-[70px]');
+      mainSidebar.classList.add('w-[240px]');
+      sidebarToggleIcon.classList.add('rotate-180');
+      sidebarBrandText.classList.remove('hidden');
+      sidebarSearchContainer.classList.remove('hidden');
+      addNewSessionBtn.classList.remove('w-11');
+      addNewSessionBtn.classList.add('w-full', 'justify-start', 'px-3');
+      addNewSessionBtn.innerHTML = `
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+        <span class="text-xs font-medium">New Session</span>
+      `;
+    } else {
+      mainSidebar.classList.add('w-[70px]');
+      mainSidebar.classList.remove('w-[240px]');
+      sidebarToggleIcon.classList.remove('rotate-180');
+      sidebarBrandText.classList.add('hidden');
+      sidebarSearchContainer.classList.add('hidden');
+      addNewSessionBtn.classList.add('w-11');
+      addNewSessionBtn.classList.remove('w-full', 'justify-start', 'px-3');
+      addNewSessionBtn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+      `;
+    }
+    renderSessions();
+  }
+
+  toggleSidebarBtn.addEventListener('click', toggleSidebar);
+
+  sidebarSearchInput.addEventListener('input', (e) => {
+    renderSessions(e.target.value);
+  });
+
+  // Modal new session
+  addNewSessionBtn.addEventListener('click', () => {
+    newSessionModal.classList.remove('hidden');
+    newCourseName.focus();
+  });
+  closeNewSessionModal.addEventListener('click', () => newSessionModal.classList.add('hidden'));
+  cancelNewSession.addEventListener('click', () => newSessionModal.classList.add('hidden'));
+
+  confirmNewSession.addEventListener('click', () => {
+    const title = newCourseName.value.trim();
+    let code = newCourseAbbr.value.trim().toUpperCase();
+    if (!title) return;
+    if (!code) code = title.slice(0, 2).toUpperCase();
+
+    sessions.push({ code, title });
+    activeSessionCode = code;
+    localStorage.setItem('learnloop_sessions', JSON.stringify(sessions));
+    localStorage.setItem('learnloop_active_session', activeSessionCode);
+    
+    newCourseName.value = '';
+    newCourseAbbr.value = '';
+    newSessionModal.classList.add('hidden');
+    renderSessions();
+  });
+
+  // 2. VIDEO PLAYER INTERACTIONS
+  function formatTime(seconds) {
+    if (isNaN(seconds)) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
+  function togglePlayPause() {
+    if (lectureVideo.paused || lectureVideo.ended) {
+      lectureVideo.play();
+      playPauseIcon.innerHTML = `
+        <rect height="16" rx="1" width="4" x="6" y="4"></rect>
+        <rect height="16" rx="1" width="4" x="14" y="4"></rect>
+      `;
+    } else {
+      lectureVideo.pause();
+      playPauseIcon.innerHTML = `
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      `;
+    }
+  }
+
+  playPauseBtn.addEventListener('click', togglePlayPause);
+  lectureVideo.addEventListener('click', togglePlayPause);
+
+  lectureVideo.addEventListener('timeupdate', () => {
+    const cur = lectureVideo.currentTime;
+    const dur = lectureVideo.duration || 18.5 * 60; // 18:30 fallback
+    const progress = (cur / dur) * 100;
+    videoProgressBar.style.width = `${progress}%`;
+    timeDisplay.innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+    noteTimestampTag.innerText = `Timestamp: ${formatTime(cur)}`;
+
+    // Update active task notification cue according to time
+    const activeCueText = document.getElementById('activeCueText');
+    if (cur < 90) {
+      activeCueText.innerText = 'Task 1 active at this timestamp';
+      captionsText.innerText = '"Polymers are formed by repeating monomer units that establish covalent bonds."';
+    } else if (cur < 150) {
+      activeCueText.innerText = 'Task 2 active: Synthetic vs Natural';
+      captionsText.innerText = '"Natural polymers such as cellulose differ in synthesis compared to polyamides."';
+    } else {
+      activeCueText.innerText = 'Task 3 active: Cross-linking mechanisms';
+      captionsText.innerText = '"Cross-linking forms covalent bridges that alter viscoelasticity."';
+    }
+  });
+
+  timelineContainer.addEventListener('click', (e) => {
+    const rect = timelineContainer.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const fraction = Math.max(0, Math.min(1, clickX / width));
+    const dur = lectureVideo.duration || 18.5 * 60;
+    lectureVideo.currentTime = fraction * dur;
+  });
+
+  document.querySelectorAll('.milestone-marker').forEach(marker => {
+    marker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ts = parseFloat(marker.getAttribute('data-timestamp'));
+      seekVideo(ts);
+    });
+  });
+
+  function seekVideo(seconds) {
+    lectureVideo.currentTime = seconds;
+    if (lectureVideo.paused) lectureVideo.play();
+    playPauseIcon.innerHTML = `
+      <rect height="16" rx="1" width="4" x="6" y="4"></rect>
+      <rect height="16" rx="1" width="4" x="14" y="4"></rect>
+    `;
+  }
+
+  volumeSlider.addEventListener('input', (e) => {
+    lectureVideo.volume = parseFloat(e.target.value);
+    lectureVideo.muted = false;
+  });
+
+  volumeMuteBtn.addEventListener('click', () => {
+    lectureVideo.muted = !lectureVideo.muted;
+    if (lectureVideo.muted) {
+      volumeSlider.value = 0;
+    } else {
+      volumeSlider.value = lectureVideo.volume || 0.8;
+    }
+  });
+
+  playbackSpeedBtn.addEventListener('click', () => {
+    const speeds = [1.0, 1.25, 1.5, 2.0, 0.75];
+    const nextIndex = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
+    playbackSpeed = speeds[nextIndex];
+    lectureVideo.playbackRate = playbackSpeed;
+    playbackSpeedBtn.innerText = `${playbackSpeed}x`;
+  });
+
+  captionsToggleBtn.addEventListener('click', () => {
+    captionsEnabled = !captionsEnabled;
+    captionsOverlay.style.opacity = captionsEnabled ? '1' : '0';
+    captionsToggleBtn.classList.toggle('bg-indigo-600', captionsEnabled);
+    captionsToggleBtn.classList.toggle('bg-slate-700', !captionsEnabled);
+  });
+
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      videoContainer.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+
+  // 3. UNDER-VIDEO TABS
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+
+      tabBtns.forEach(b => {
+        b.className = 'tab-btn text-slate-400 hover:text-slate-700 pb-3 -mb-3 border-b-2 border-transparent transition-colors cursor-pointer';
+      });
+      btn.className = 'tab-btn text-indigo-600 border-b-2 border-indigo-600 pb-3 -mb-3 transition-colors cursor-pointer';
+
+      Object.keys(tabPanels).forEach(key => {
+        if (key === targetTab) {
+          tabPanels[key].classList.remove('hidden');
+        } else {
+          tabPanels[key].classList.add('hidden');
+        }
+      });
+    });
+  });
+
+  function renderNotes() {
+    notesContainer.innerHTML = '';
+    notesCountBadge.innerText = userNotes.length;
+    userNotes.forEach((note, index) => {
+      const div = document.createElement('div');
+      div.className = 'p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between group';
+      div.innerHTML = `
+        <div class="flex items-start space-x-2">
+          <span class="font-mono text-[11px] text-indigo-600 font-semibold px-1.5 py-0.5 rounded bg-indigo-50 shrink-0 mt-0.5">${note.time}</span>
+          <p class="text-xs text-slate-700 leading-snug">${note.text}</p>
+        </div>
+        <button onclick="deleteNote(${index})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity ml-2" title="Delete note">
+          <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path></svg>
+        </button>
+      `;
+      notesContainer.appendChild(div);
+    });
+  }
+
+  function deleteNote(index) {
+    userNotes.splice(index, 1);
+    localStorage.setItem('learnloop_notes', JSON.stringify(userNotes));
+    renderNotes();
+  }
+
+  addNoteBtn.addEventListener('click', () => {
+    const text = noteInput.value.trim();
+    if (!text) return;
+    const curTime = formatTime(lectureVideo.currentTime || 402);
+    userNotes.unshift({ id: Date.now(), time: curTime, text });
+    localStorage.setItem('learnloop_notes', JSON.stringify(userNotes));
+    noteInput.value = '';
+    renderNotes();
+  });
+
+  // Speech Synthesis for Vocabulary
+  window.speakWord = function(word) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Discussion Post
+  const discussionInput = document.getElementById('discussionInput');
+  const postDiscussionBtn = document.getElementById('postDiscussionBtn');
+  const discussionList = document.getElementById('discussionList');
+
+  postDiscussionBtn.addEventListener('click', () => {
+    const val = discussionInput.value.trim();
+    if (!val) return;
+    const postDiv = document.createElement('div');
+    postDiv.className = 'p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between';
+    postDiv.innerHTML = `
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-bold text-slate-800">Simona Biles</span>
+          <span class="text-[10px] text-indigo-500 font-semibold">Just now</span>
+        </div>
+        <p class="text-xs text-slate-600 mt-0.5">${val}</p>
+      </div>
+      <button class="upvote-btn flex items-center space-x-1 text-slate-400 hover:text-indigo-600 text-xs font-semibold px-2 py-1 rounded bg-white border border-slate-200" onclick="handleUpvote(this)">
+        <span>▲</span>
+        <span class="count">1</span>
+      </button>
+    `;
+    discussionList.prepend(postDiv);
+    discussionInput.value = '';
+  });
+
+  window.handleUpvote = function(btn) {
+    const countSpan = btn.querySelector('.count');
+    let cnt = parseInt(countSpan.innerText, 10);
+    cnt += 1;
+    countSpan.innerText = cnt;
+    btn.classList.add('text-indigo-600', 'border-indigo-300');
+  };
+
+  // 4. LEARNING ACTIVITIES ACCORDION & QUIZ LOGIC
+  window.toggleTaskAccordion = function(cardId) {
+    const card = document.getElementById(cardId);
+    const body = card.querySelector('.task-body');
+    const arrow = card.querySelector('.accordion-arrow');
+
+    if (body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      if (arrow) arrow.classList.add('rotate-180');
+    } else {
+      body.classList.add('hidden');
+      if (arrow) arrow.classList.remove('rotate-180');
+    }
+  };
+
+  function updateProgress() {
+    let completed = progressState.completedCount;
+    if (progressState.task1Done && progressState.task2Done) {
+      completed = 2;
+    } else if (progressState.task1Done) {
+      completed = 1;
+    }
+    progressState.completedCount = completed;
+    localStorage.setItem('learnloop_progress', JSON.stringify(progressState));
+
+    const percent = Math.round((completed / 5) * 100);
+    progressPercentLabel.innerText = `${percent}%`;
+    progressSummaryLabel.innerText = `${completed}/5 Done`;
+    progressCirclePath.setAttribute('stroke-dasharray', `${percent}, 100`);
+
+    if (progressState.task1Done) {
+      document.getElementById('task1BadgeIcon').className = 'w-5 h-5 rounded-full bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center';
+      document.getElementById('task1BadgeIcon').innerHTML = '✓';
+      document.getElementById('task1StatusPill').className = 'px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold';
+      document.getElementById('task1StatusPill').innerText = 'Completed';
+    }
+    if (progressState.task2Done) {
+      document.getElementById('task2BadgeIcon').className = 'w-5 h-5 rounded-full bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center';
+      document.getElementById('task2BadgeIcon').innerHTML = '✓';
+      document.getElementById('task2StatusPill').innerText = 'Done';
+      document.getElementById('task2StatusPill').className = 'px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold';
+    }
+  }
+
+  // Activity 1 option clicking
+  task1Options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      task1Options.forEach(o => {
+        o.className = 'task-option flex items-center space-x-2.5 p-2 rounded-lg border border-slate-200 bg-white text-xs opacity-75 cursor-pointer hover:border-slate-300';
+        o.querySelector('.opt-bullet').className = 'opt-bullet w-4 h-4 rounded-full border border-slate-300 shrink-0';
+        o.querySelector('.opt-bullet').innerHTML = '';
+        o.querySelector('span').className = 'text-slate-600';
+      });
+
+      opt.className = 'task-option flex items-center space-x-2.5 p-2 rounded-lg border-2 border-emerald-500 bg-emerald-50/70 text-xs cursor-pointer transition-all';
+      opt.querySelector('.opt-bullet').className = 'opt-bullet w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0';
+      opt.querySelector('.opt-bullet').innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      opt.querySelector('span').className = 'text-slate-800 font-medium';
+      opt.querySelector('input').checked = true;
+      task1Feedback.classList.add('hidden');
+    });
+  });
+
+  task1SubmitBtn.addEventListener('click', () => {
+    const selected = document.querySelector('input[name="task1_opt"]:checked');
+    if (!selected) return;
+
+    if (selected.value === 'A') {
+      progressState.task1Done = true;
+      updateProgress();
+      // Unlock and open Task 2
+      const task2Body = document.getElementById('task2Body');
+      task2Body.classList.remove('hidden');
+      const arrow2 = document.querySelector('#taskCard2 .accordion-arrow');
+      if (arrow2) arrow2.classList.add('rotate-180');
+      document.getElementById('task2BadgeIcon').className = 'w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center';
+      document.getElementById('taskCard2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      task1Feedback.classList.remove('hidden');
+      document.getElementById('taskCard1').classList.add('shake-animation');
+      setTimeout(() => document.getElementById('taskCard1').classList.remove('shake-animation'), 400);
+    }
+  });
+
+  // Task 2 submit
+  task2SubmitBtn.addEventListener('click', () => {
+    const selected2 = document.querySelector('input[name="task2_radio"]:checked');
+    if (!selected2) return;
+    if (selected2.value === 'cellulose') {
+      progressState.task2Done = true;
+      updateProgress();
+      task2SubmitBtn.innerText = '✓ Correct! Task Completed';
+      task2SubmitBtn.className = 'w-full py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold';
+    } else {
+      alert('Try again! Think of plant-derived biological polymers.');
+    }
+  });
+
+  // 5. AI TUTOR WIDGET
+  openAiTutorBtn.addEventListener('click', () => {
+    aiTutorModal.classList.remove('hidden');
+    aiChatInput.focus();
+  });
+
+  closeAiTutorBtn.addEventListener('click', () => {
+    aiTutorModal.classList.add('hidden');
+  });
+
+  // Keyboard shortcut Command+K or Ctrl+K
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      aiTutorModal.classList.toggle('hidden');
+      if (!aiTutorModal.classList.contains('hidden')) {
+        aiChatInput.focus();
+      }
+    }
+  });
+
+  function sendAiQuery() {
+    const text = aiChatInput.value.trim();
+    if (!text) return;
+
+    // User Message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'flex items-start justify-end space-x-2';
+    userMsg.innerHTML = `
+      <div class="bg-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-sm max-w-[85%] leading-relaxed">
+        ${text}
+      </div>
+    `;
+    aiChatMessages.appendChild(userMsg);
+    aiChatInput.value = '';
+    aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+
+    // Show indicator
+    aiTypingIndicator.classList.remove('hidden');
+
+    setTimeout(() => {
+      aiTypingIndicator.classList.add('hidden');
+      let response = "That's a key question in polymer science! Covalent linking defines whether a polymer has thermoplastic or thermosetting characteristics.";
+      const lower = text.toLowerCase();
+      if (lower.includes('vulcaniz') || lower.includes('cross')) {
+        response = "Vulcanization is the treatment of natural rubber with sulfur, creating cross-links between polymer chains. This makes the rubber stronger, more elastic, and resistant to heat.";
+      } else if (lower.includes('monomer')) {
+        response = "A monomer is a small molecular subunit (like ethylene or amino acids) that can chemically bind with other monomers to build a long repeating polymer chain.";
+      } else if (lower.includes('synthetic') || lower.includes('natural')) {
+        response = "Natural polymers originate from living organisms (e.g., DNA, protein, cellulose, rubber), while synthetic polymers are petroleum or laboratory synthesized (e.g., nylon, Teflon, polyethylene).";
+      }
+
+      const botMsg = document.createElement('div');
+      botMsg.className = 'flex items-start space-x-2';
+      botMsg.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] shrink-0 mt-0.5">LL</div>
+        <div class="bg-slate-800/80 p-2.5 rounded-2xl rounded-tl-sm border border-slate-700/60 max-w-[85%] text-slate-200 leading-relaxed">
+          ${response}
+        </div>
+      `;
+      aiChatMessages.appendChild(botMsg);
+      aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }, 850);
+  }
+
+  sendAiMessageBtn.addEventListener('click', sendAiQuery);
+  aiChatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendAiQuery();
+  });
+
+  // Dark/Light Theme preview toggle
+  const themeLightBtn = document.getElementById('themeLightBtn');
+  const themeDarkBtn = document.getElementById('themeDarkBtn');
+  themeLightBtn.addEventListener('click', () => {
+    themeLightBtn.classList.add('bg-white/20', 'text-white');
+    themeLightBtn.classList.remove('text-slate-400');
+    themeDarkBtn.classList.remove('bg-white/20', 'text-white');
+    themeDarkBtn.classList.add('text-slate-400');
+  });
+  themeDarkBtn.addEventListener('click', () => {
+    themeDarkBtn.classList.add('bg-white/20', 'text-white');
+    themeDarkBtn.classList.remove('text-slate-400');
+    themeLightBtn.classList.remove('bg-white/20', 'text-white');
+    themeLightBtn.classList.add('text-slate-400');
+  });
+
+  // Initialize
+  renderSessions();
+  renderNotes();
+  updateProgress();
+</script>
+<!-- END: Interactivity Script -->
+</body></html>

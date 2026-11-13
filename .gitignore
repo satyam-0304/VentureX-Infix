@@ -13,6 +13,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+dist-ssr/
 downloads/
 eggs/
 .eggs/
@@ -42,16 +43,19 @@ venv.bak/
 htmlcov/
 .mypy_cache/
 
-# Node / Next.js (for frontend)
+# Node / Frontend Dependencies & Build
 node_modules/
 .next/
 out/
 .pnp
 .pnp.js
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
 # Database & local data
 *.sqlite
@@ -64,4 +68,4 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-
+*.local

@@ -21,31 +21,19 @@ export const WorkspaceNavbar: React.FC = () => {
       <header className="h-[68px] px-6 lg:px-8 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 select-none z-10">
         {/* Logo Branding */}
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-              <svg
-                className="w-5 h-5 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 12c-2-2.5-4-4-6.5-4A4.5 4.5 0 1 0 10 12.5L12 12z" />
-                <path d="M12 12c2 2.5 4 4 6.5 4a4.5 4.5 0 1 0-4.5-4.5L12 12z" />
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-base tracking-tight text-slate-900">
-                  LURNIX
-                </span>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100">
-                  AI
-                </span>
-              </div>
-            </div>
+          <div
+            className="flex items-center space-x-2.5 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setActiveNavView('practice')}
+            title="LURNIX Learning Workspace"
+          >
+            <img
+              src="/lurnix-logo.png"
+              alt="LURNIX"
+              className="h-7 w-auto object-contain"
+            />
+            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+              AI
+            </span>
           </div>
         </div>
 

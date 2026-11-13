@@ -96,22 +96,14 @@ export const SessionSidebar: React.FC = () => {
           <div className="flex items-center justify-between w-full px-3 mb-4">
             <button
               onClick={() => setActiveSessionId(sessions[0]?.id || '')}
-              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform shrink-0"
+              className="w-10 h-10 rounded-xl bg-white/95 border border-slate-700/60 shadow-lg shadow-indigo-950/40 flex items-center justify-center p-1.5 hover:scale-105 transition-transform shrink-0 cursor-pointer overflow-hidden"
               title="LURNIX Home"
             >
-              {/* Infinity Glyph */}
-              <svg
-                className="w-6 h-6 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 12c-2-2.5-4-4-6.5-4A4.5 4.5 0 1 0 10 12.5L12 12z" />
-                <path d="M12 12c2 2.5 4 4 6.5 4a4.5 4.5 0 1 0-4.5-4.5L12 12z" />
-              </svg>
+              <img
+                src="/lurnix-mark.png"
+                alt="LURNIX Emblem"
+                className="w-full h-full object-contain"
+              />
             </button>
 
             {sidebarExpanded && (

@@ -319,12 +319,8 @@ DEMO_REVISIONS: dict[str, RapidRevisionResponse] = {
 }
 
 
-# Mapping from known YouTube video IDs to demo fixture keys
-YOUTUBE_TO_DEMO_MAP: dict[str, str] = {
-    "k38j3pG6KXY": "demo_polymers",
-    "aircAruvnKk": "demo_neural_nets",
-    "bHTqg7nQ2iE": "demo_electromagnetism",
-}
+# Mapping from known YouTube video IDs to demo fixture keys (emptied to prevent hijacking live URLs)
+YOUTUBE_TO_DEMO_MAP: dict[str, str] = {}
 
 
 def resolve_demo_key(video_id: str) -> str | None:

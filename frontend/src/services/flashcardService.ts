@@ -6,7 +6,6 @@
  */
 
 import { FlashcardDeck, FlashcardItem, FlashcardConfidence, FlashcardCategory } from '../types';
-import { profileService } from './profileService';
 import { formatVideoTime } from '../utils/timeFormat';
 
 export interface CreateCardInput {
@@ -42,293 +41,7 @@ export interface AiAssistResult {
   generated_cards?: CreateCardInput[];
 }
 
-const STORAGE_KEY = 'lurnix_flashcard_decks';
-
-// Initial local seed deck for Polymers
-const SEED_POLYMERS_DECK: FlashcardDeck = {
-  id: 'deck_polymers_core',
-  user_id: 'usr_simona_01',
-  video_id: 'demo_polymers',
-  session_id: 'session-pl-04',
-  title: 'Polymers & Macromolecules: Core Principles',
-  description: 'Grounded flashcards covering monomer chemistry, polymerization mechanisms, synthetic elastomers, and cross-linking kinetics.',
-  card_count: 18,
-  mastered_count: 4,
-  created_at: Date.now() - 3 * 86400 * 1000,
-  updated_at: Date.now(),
-  cards: [
-    {
-      id: 'c_poly_01',
-      deck_id: 'deck_polymers_core',
-      question: 'What is the fundamental definition of a monomer in polymer chemistry?',
-      answer: 'A monomer is a small, reactive molecule that can undergo chemical reactions with other monomers to form a repeating structural unit within a high-molecular-weight polymer chain.',
-      category: 'Definition',
-      chapter_title: 'Introduction to Polymers',
-      timestamp_sec: 45.0,
-      timestamp_formatted: '00:45',
-      confidence: 'very_confident',
-      is_bookmarked: true,
-      review_count: 3,
-      order_index: 0,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_02',
-      deck_id: 'deck_polymers_core',
-      question: 'What distinguishes natural polymers from synthetic polymers?',
-      answer: 'Natural polymers (DNA, cellulose, proteins) are synthesized biologically by living organisms, whereas synthetic polymers (polyethylene, nylon, Teflon) are manufactured industrially via petrochemistry.',
-      category: 'Concept',
-      chapter_title: 'Introduction to Polymers',
-      timestamp_sec: 120.0,
-      timestamp_formatted: '02:00',
-      confidence: 'somewhat_confident',
-      is_bookmarked: false,
-      review_count: 2,
-      order_index: 1,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_03',
-      deck_id: 'deck_polymers_core',
-      question: 'How does Degree of Polymerization (DP) relate monomer mass to total polymer mass?',
-      answer: 'DP represents the number of repeating monomer units: M_polymer = DP × M_monomer. Higher DP significantly increases tensile strength, viscosity, and melting point.',
-      category: 'Formula',
-      chapter_title: 'Introduction to Polymers',
-      timestamp_sec: 195.0,
-      timestamp_formatted: '03:15',
-      confidence: 'unreviewed',
-      is_bookmarked: false,
-      review_count: 0,
-      order_index: 2,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_04',
-      deck_id: 'deck_polymers_core',
-      question: 'What structural property makes macromolecules exhibit viscoelasticity?',
-      answer: 'Macromolecules have long, entangled molecular chains. Under sudden stress they behave like elastic solids, but under sustained load the chains slide past each other, exhibiting viscous flow.',
-      category: 'Important Fact',
-      chapter_title: 'Introduction to Polymers',
-      timestamp_sec: 270.0,
-      timestamp_formatted: '04:30',
-      confidence: 'not_confident',
-      is_bookmarked: true,
-      review_count: 1,
-      order_index: 3,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_05',
-      deck_id: 'deck_polymers_core',
-      question: 'What is the key mechanistic difference between addition and condensation polymerization?',
-      answer: 'Addition (chain-growth) polymerization involves opening double bonds without forming any by-products. Condensation (step-growth) links bifunctional monomers with the elimination of small molecules like H2O or HCl.',
-      category: 'Concept',
-      chapter_title: 'Addition vs Condensation Polymerization',
-      timestamp_sec: 340.0,
-      timestamp_formatted: '05:40',
-      confidence: 'very_confident',
-      is_bookmarked: false,
-      review_count: 4,
-      order_index: 4,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_06',
-      deck_id: 'deck_polymers_core',
-      question: 'What are the three core kinetic stages of free-radical addition polymerization?',
-      answer: '1. Initiation (homolytic cleavage of initiator to form free radicals)\n2. Propagation (rapid radical addition to monomer double bonds)\n3. Termination (combination or disproportionation of radical chains)',
-      category: 'Concept',
-      chapter_title: 'Addition vs Condensation Polymerization',
-      timestamp_sec: 420.0,
-      timestamp_formatted: '07:00',
-      confidence: 'somewhat_confident',
-      is_bookmarked: true,
-      review_count: 2,
-      order_index: 5,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_07',
-      deck_id: 'deck_polymers_core',
-      question: 'What role does Benzoyl Peroxide play in free-radical polymerization?',
-      answer: 'Benzoyl peroxide acts as a thermal initiator: upon heating to ~80°C, the weak O-O peroxy bond breaks homolytically to generate benzoyloxy and phenyl radicals that attack alkene monomers.',
-      category: 'Important Fact',
-      chapter_title: 'Addition vs Condensation Polymerization',
-      timestamp_sec: 510.0,
-      timestamp_formatted: '08:30',
-      confidence: 'very_confident',
-      is_bookmarked: false,
-      review_count: 3,
-      order_index: 6,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_08',
-      deck_id: 'deck_polymers_core',
-      question: 'What condition is strictly required for monomers to undergo condensation polymerization?',
-      answer: 'Monomers must possess at least two reactive functional groups (bifunctional or polyfunctional), such as dicarboxylic acids and diamines/diols (e.g., adipic acid + hexamethylenediamine -> Nylon 6,6).',
-      category: 'Definition',
-      chapter_title: 'Addition vs Condensation Polymerization',
-      timestamp_sec: 590.0,
-      timestamp_formatted: '09:50',
-      confidence: 'unreviewed',
-      is_bookmarked: false,
-      review_count: 0,
-      order_index: 7,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_09',
-      deck_id: 'deck_polymers_core',
-      question: 'Why do condensation polymers generally have lower molecular weights than addition polymers?',
-      answer: 'Condensation follows step-growth kinetics where high molecular weight is achieved only at extremely high conversion rates (>99%), whereas addition forms high-MW chains immediately in early stages.',
-      category: 'Important Fact',
-      chapter_title: 'Addition vs Condensation Polymerization',
-      timestamp_sec: 670.0,
-      timestamp_formatted: '11:10',
-      confidence: 'not_confident',
-      is_bookmarked: false,
-      review_count: 1,
-      order_index: 8,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_10',
-      deck_id: 'deck_polymers_core',
-      question: 'What is the mathematical difference between Number-Average (Mn) and Weight-Average (Mw) molecular weights?',
-      answer: 'Mn = Σ(Ni·Mi) / Σ(Ni) based on mole fraction.\nMw = Σ(Ni·Mi²) / Σ(Ni·Mi) weighted toward larger molecules. Mw is always ≥ Mn in polydisperse systems.',
-      category: 'Formula',
-      chapter_title: 'Molecular Weight & Structural Architecture',
-      timestamp_sec: 750.0,
-      timestamp_formatted: '12:30',
-      confidence: 'unreviewed',
-      is_bookmarked: true,
-      review_count: 0,
-      order_index: 9,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_11',
-      deck_id: 'deck_polymers_core',
-      question: 'What is Polydispersity Index (PDI) and what does PDI = 1.0 signify?',
-      answer: 'PDI = Mw / Mn. A PDI equal to 1.0 indicates a perfectly monodisperse polymer where all individual chains have identical lengths (common in natural proteins, rare in synthetic polymers).',
-      category: 'Definition',
-      chapter_title: 'Molecular Weight & Structural Architecture',
-      timestamp_sec: 830.0,
-      timestamp_formatted: '13:50',
-      confidence: 'somewhat_confident',
-      is_bookmarked: false,
-      review_count: 2,
-      order_index: 10,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_12',
-      deck_id: 'deck_polymers_core',
-      question: 'How does polymer branching affect polymer density and crystallinity?',
-      answer: 'High branching (e.g., LDPE) prevents chains from packing closely, reducing crystallinity and density. Linear polymers (e.g., HDPE) pack tightly into ordered crystal lattices, increasing rigidity and melting point.',
-      category: 'Concept',
-      chapter_title: 'Molecular Weight & Structural Architecture',
-      timestamp_sec: 915.0,
-      timestamp_formatted: '15:15',
-      confidence: 'unreviewed',
-      is_bookmarked: false,
-      review_count: 0,
-      order_index: 11,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_13',
-      deck_id: 'deck_polymers_core',
-      question: 'What is cross-linking and how does it transform a thermoplastic into a thermoset?',
-      answer: 'Cross-linking creates covalent bonds between adjacent polymer chains, forming a continuous 3D network. This permanently locks the chains in place, preventing melting upon reheating (thermosetting).',
-      category: 'Concept',
-      chapter_title: 'Molecular Weight & Structural Architecture',
-      timestamp_sec: 995.0,
-      timestamp_formatted: '16:35',
-      confidence: 'somewhat_confident',
-      is_bookmarked: false,
-      review_count: 1,
-      order_index: 12,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_14',
-      deck_id: 'deck_polymers_core',
-      question: 'What chemical process occurs during the vulcanization of natural rubber?',
-      answer: 'Sulfur is heated with polyisoprene at ~140°C in the presence of zinc oxide accelerators. Sulfur forms disulfide (-S-S-) cross-links across allylic positions, transforming sticky latex into durable, elastic rubber.',
-      category: 'Concept',
-      chapter_title: 'Industrial Applications & Vulcanization',
-      timestamp_sec: 1060.0,
-      timestamp_formatted: '17:40',
-      confidence: 'very_confident',
-      is_bookmarked: true,
-      review_count: 5,
-      order_index: 13,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_15',
-      deck_id: 'deck_polymers_core',
-      question: 'What is the Glass Transition Temperature (Tg) and why is it critical for polymer engineering?',
-      answer: 'Tg is the temperature range where an amorphous polymer transitions from a hard, brittle "glassy" state to a flexible, compliant "rubbery" state. Rubber must operate above its Tg, while polystyrene operates below its Tg.',
-      category: 'Definition',
-      chapter_title: 'Industrial Applications & Vulcanization',
-      timestamp_sec: 1130.0,
-      timestamp_formatted: '18:50',
-      confidence: 'not_confident',
-      is_bookmarked: false,
-      review_count: 2,
-      order_index: 14,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_16',
-      deck_id: 'deck_polymers_core',
-      question: 'What is the chemical repeating unit of Polyethylene Terephthalate (PET)?',
-      answer: '[-CO-C6H4-CO-O-CH2-CH2-O-]n, produced by esterification of terephthalic acid with ethylene glycol, widely used in recyclable beverage containers and polyester synthetic fibers.',
-      category: 'Formula',
-      chapter_title: 'Industrial Applications & Vulcanization',
-      timestamp_sec: 1190.0,
-      timestamp_formatted: '19:50',
-      confidence: 'unreviewed',
-      is_bookmarked: false,
-      review_count: 0,
-      order_index: 15,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_17',
-      deck_id: 'deck_polymers_core',
-      question: 'What environmental degradation mechanism challenges non-biodegradable synthetic polymers?',
-      answer: 'Most synthetic polymers possess non-polar carbon-carbon backbones resistant to microbial enzymatic breakdown and moisture, requiring high-energy UV photodegradation that leads to persistent microplastics.',
-      category: 'Important Fact',
-      chapter_title: 'Industrial Applications & Vulcanization',
-      timestamp_sec: 1260.0,
-      timestamp_formatted: '21:00',
-      confidence: 'unreviewed',
-      is_bookmarked: false,
-      review_count: 0,
-      order_index: 16,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-    {
-      id: 'c_poly_18',
-      deck_id: 'deck_polymers_core',
-      question: 'What makes conductive polymers like Polyacetylene capable of carrying electrical current?',
-      answer: 'Polyacetylene has an alternating single and double bond conjugated pi-electron system along its backbone. When chemically doped with iodine or arsenic pentafluoride, mobile polarons and solitons conduct electricity.',
-      category: 'Important Fact',
-      chapter_title: 'Industrial Applications & Vulcanization',
-      timestamp_sec: 1320.0,
-      timestamp_formatted: '22:00',
-      confidence: 'somewhat_confident',
-      is_bookmarked: false,
-      review_count: 1,
-      order_index: 17,
-      created_at: Date.now() - 3 * 86400 * 1000,
-    },
-  ],
-};
+const STORAGE_KEY = 'lurnix_flashcard_decks_v3';
 
 class FlashcardService {
   private apiBase: string;
@@ -340,8 +53,8 @@ class FlashcardService {
 
   private getAuthHeaders(): Record<string, string> {
     const token = typeof localStorage !== 'undefined'
-      ? localStorage.getItem('lurnix_auth_token') || 'lurnix_demo_token_simona'
-      : 'lurnix_demo_token_simona';
+      ? localStorage.getItem('lurnix_auth_token') || 'lurnix_auth_token_default'
+      : 'lurnix_auth_token_default';
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
@@ -356,7 +69,7 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    const initial = [SEED_POLYMERS_DECK];
+    const initial: FlashcardDeck[] = [];
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
     } catch (e) {}
@@ -379,7 +92,7 @@ class FlashcardService {
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           this.saveLocalDecks(data);
           return data;
         }
@@ -400,7 +113,6 @@ class FlashcardService {
       });
       if (res.ok) {
         const deck = await res.json();
-        // Update local cache
         const local = this.ensureLocalCache();
         const updated = local.map((d) => (d.id === deck.id ? deck : d));
         this.saveLocalDecks(updated);
@@ -431,15 +143,19 @@ class FlashcardService {
     const existing = local.find((d) => d.video_id === videoId);
     if (existing) return existing;
 
-    // Generate local deck
+    // Generate clean local deck
     const newDeck: FlashcardDeck = {
-      ...SEED_POLYMERS_DECK,
       id: `deck_${videoId}_${Date.now()}`,
+      user_id: 'usr_default',
       video_id: videoId,
       session_id: sessionId,
       title: `Study Deck: ${videoId}`,
+      description: 'Interactive flashcards for this lecture.',
+      card_count: 0,
+      mastered_count: 0,
       created_at: Date.now(),
       updated_at: Date.now(),
+      cards: [],
     };
     local.push(newDeck);
     this.saveLocalDecks(local);
@@ -449,7 +165,7 @@ class FlashcardService {
   /**
    * Generates a fresh deck for a video.
    */
-  async generateDeck(videoId: string, title?: string, targetCount: number = 18): Promise<FlashcardDeck> {
+  async generateDeck(videoId: string, title?: string, targetCount: number = 10): Promise<FlashcardDeck> {
     try {
       const res = await fetch(`${this.apiBase}/api/flashcards/generate`, {
         method: 'POST',
@@ -469,7 +185,6 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    // Local fallback
     return this.getOrCreateDeckForVideo(videoId);
   }
 
@@ -490,7 +205,6 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    // Local fallback
     const local = this.ensureLocalCache();
     for (const d of local) {
       const card = d.cards.find((c) => c.id === cardId);
@@ -522,7 +236,6 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    // Local fallback
     const local = this.ensureLocalCache();
     for (const d of local) {
       const card = d.cards.find((c) => c.id === cardId);
@@ -552,7 +265,6 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    // Local fallback
     const local = this.ensureLocalCache();
     for (const d of local) {
       const card = d.cards.find((c) => c.id === cardId);
@@ -580,7 +292,6 @@ class FlashcardService {
       });
       if (res.ok) {
         const newCard = await res.json();
-        // Insert into local cache
         const local = this.ensureLocalCache();
         const deck = local.find((d) => d.id === deckId);
         if (deck) {
@@ -592,7 +303,6 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    // Local fallback
     const local = this.ensureLocalCache();
     const deck = local.find((d) => d.id === deckId);
     if (deck) {
@@ -602,7 +312,7 @@ class FlashcardService {
         question: input.question,
         answer: input.answer,
         category: input.category,
-        chapter_title: input.chapter_title || 'Custom Addition',
+        chapter_title: input.chapter_title || 'General',
         timestamp_sec: input.timestamp_sec,
         timestamp_formatted: formatVideoTime(input.timestamp_sec),
         confidence: 'unreviewed',
@@ -648,7 +358,6 @@ class FlashcardService {
         headers: this.getAuthHeaders(),
       });
       if (res.ok) {
-        // update local cache
         const local = this.ensureLocalCache();
         const deck = local.find((d) => d.id === deckId);
         if (deck) {
@@ -685,42 +394,36 @@ class FlashcardService {
       }
     } catch (e) {}
 
-    // Local fallback heuristic response
+    // Clean neutral fallback responses
     if (input.action === 'simplify') {
       return {
-        reply: `**Simplified Concept:**\n\nIn plain words: ${input.current_question || 'this concept'} explains that foundational sub-units bond in a repeating sequence to build durable structural networks.\n\nTakeaway: Small identical parts unite to form strong, functional wholes.`,
+        reply: `**Simplified Concept:**\n\n${input.current_answer || 'This concept explains key principles from the lecture in straightforward terms.'}`,
         suggested_question: input.current_question,
         suggested_answer: input.current_answer,
         suggested_category: 'Concept',
       };
     } else if (input.action === 'analogy') {
       return {
-        reply: `💡 **Everyday Analogy:**\n\nThink of ${input.current_question || 'this concept'} like linking individual paperclips into a chain: individually they are tiny and loose, but hooked together they create a long, flexible ribbon. Adding cross-links is like securing them with zip ties so they can't slip apart!`,
-        suggested_question: `Analogy for ${input.current_question || 'concept'}`,
-        suggested_answer: 'Individual clips hooked into chains, locked with cross-links into an elastic structure.',
+        reply: `💡 **Everyday Analogy:**\n\nThink of ${input.current_question || 'this concept'} like foundational building blocks: each individual piece provides structure, and when connected in sequence, they form a robust system.`,
+        suggested_question: `Analogy for: ${input.current_question || 'Topic'}`,
+        suggested_answer: 'Modular components working together in an interconnected sequence.',
         suggested_category: 'Concept',
       };
     } else if (input.action === 'generate_more') {
       return {
-        reply: 'Generated 2 additional exam-focused study cards grounded in this lecture segment!',
+        reply: 'Generated an additional study card grounded in this topic.',
         generated_cards: [
           {
-            question: `What is the key experimental verification for ${input.current_question?.slice(0, 40) || 'this topic'}?`,
-            answer: 'Differential Scanning Calorimetry (DSC) and Gel Permeation Chromatography (GPC) to verify thermal transitions and molar mass.',
+            question: `What is the core principle behind ${input.current_question || 'this topic'}?`,
+            answer: input.current_answer || 'Key foundational concept from this lecture.',
             category: 'Important Fact',
-            timestamp_sec: 450.0,
-          },
-          {
-            question: `What governing kinetic parameter dictates the yield of ${input.current_question?.slice(0, 40) || 'this process'}?`,
-            answer: 'The ratio of propagation rate to termination rate (kp / kt), heavily influenced by reaction temperature and initiator purity.',
-            category: 'Formula',
-            timestamp_sec: 720.0,
+            timestamp_sec: 0,
           },
         ],
       };
     } else {
       return {
-        reply: `Regarding **"${input.current_question || 'this card'}"**:\n\n${input.current_answer || 'This principle connects fundamental chemical structure to macroscopic material properties.'}\n\nKey exam tip: Pay attention to the distinction between kinetic control and thermodynamic stability!`,
+        reply: `Regarding **"${input.current_question || 'this card'}"**:\n\n${input.current_answer || 'Review this key takeaway from your lecture.'}`,
       };
     }
   }

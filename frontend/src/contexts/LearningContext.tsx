@@ -80,8 +80,8 @@ interface LearningContextType {
   resetToDefaultSessions: () => void;
 }
 
-const STORAGE_KEY_SESSIONS = 'lurnix_sessions_v1';
-const STORAGE_KEY_ACTIVE = 'lurnix_active_session_id_v1';
+const STORAGE_KEY_SESSIONS = 'lurnix_sessions_v3';
+const STORAGE_KEY_ACTIVE = 'lurnix_active_session_id_v3';
 
 const LearningContext = createContext<LearningContextType | undefined>(undefined);
 
@@ -105,15 +105,15 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const stored = localStorage.getItem(STORAGE_KEY_ACTIVE);
       if (stored) return stored;
     } catch (e) {}
-    return 'session-pl-04';
+    return DEFAULT_SESSIONS[0].id;
   });
 
   // Current active session
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || DEFAULT_SESSIONS[0];
 
   // Video playback states
-  const [currentVideoTime, setCurrentVideoTime] = useState<number>(activeSession.savedPlaybackPosition || 402);
-  const [videoDuration, setVideoDuration] = useState<number>(activeSession.durationSeconds || 1110);
+  const [currentVideoTime, setCurrentVideoTime] = useState<number>(activeSession.savedPlaybackPosition || 0);
+  const [videoDuration, setVideoDuration] = useState<number>(activeSession.durationSeconds || 0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.0);
   const [volume, setVolumeState] = useState<number>(0.8);
@@ -195,7 +195,7 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!trimmedTitle) return;
     const finalCode = (code.trim() || trimmedTitle.slice(0, 2)).toUpperCase();
     const finalTopic = topic?.trim() || trimmedTitle.split(' ')[0];
-    const finalVideoUrl = videoUrl?.trim() || 'https://www.youtube.com/watch?v=k38j3pG6KXY';
+    const finalVideoUrl = videoUrl?.trim() || '';
 
     const defaultTasks: ActivityTask[] = [
       {

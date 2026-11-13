@@ -10,29 +10,33 @@ client = TestClient(app)
 
 
 def test_list_decks():
-    """Verify listing flashcard decks returns seeded polymers deck."""
+    """Verify listing flashcard decks."""
+    client.post("/api/flashcards/generate", json={
+        "video_id": "test_video_list",
+        "title": "Calculus Lecture",
+        "target_count": 10,
+    })
     response = client.get("/api/flashcards/decks")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 1
-    poly_deck = next((d for d in data if d["video_id"] == "demo_polymers"), None)
-    assert poly_deck is not None
-    assert "Polymers" in poly_deck["title"]
-    assert poly_deck["card_count"] >= 15
 
 
 def test_get_deck():
     """Verify retrieving full deck includes ordered cards with timestamps and categories."""
-    # First get list to find id
-    list_res = client.get("/api/flashcards/decks")
-    deck_id = list_res.json()[0]["id"]
+    gen_res = client.post("/api/flashcards/generate", json={
+        "video_id": "test_video_get",
+        "title": "Linear Algebra",
+        "target_count": 10,
+    })
+    deck_id = gen_res.json()["id"]
 
     response = client.get(f"/api/flashcards/decks/{deck_id}")
     assert response.status_code == 200
     deck = response.json()
     assert deck["id"] == deck_id
-    assert len(deck["cards"]) >= 15
+    assert len(deck["cards"]) >= 10
 
     first_card = deck["cards"][0]
     assert "question" in first_card

@@ -102,7 +102,7 @@ export const FlashcardsView: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    const videoId = (activeSession as any).videoId || activeSession.id || 'demo_polymers';
+    const videoId = (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '';
 
     flashcardService
       .getOrCreateDeckForVideo(videoId, activeSession.id)
@@ -290,7 +290,7 @@ export const FlashcardsView: React.FC = () => {
 
     try {
       const res: AiAssistResult = await flashcardService.aiAssist({
-        video_id: (activeSession as any).videoId || activeSession.id || 'demo_polymers',
+        video_id: (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '',
         deck_id: activeDeck?.id,
         card_id: currentCard.id,
         action,
@@ -353,7 +353,7 @@ export const FlashcardsView: React.FC = () => {
 
     try {
       const res = await flashcardService.aiAssist({
-        video_id: (activeSession as any).videoId || activeSession.id || 'demo_polymers',
+        video_id: (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '',
         deck_id: activeDeck?.id,
         card_id: currentCard?.id,
         action: 'custom_chat',
@@ -489,7 +489,7 @@ export const FlashcardsView: React.FC = () => {
   // Generate Fresh / More Deck
   const handleGenerateFreshDeck = async () => {
     setIsGeneratingMore(true);
-    const videoId = (activeSession as any).videoId || activeSession.id || 'demo_polymers';
+    const videoId = (activeSession as any).videoId || activeSession.videoUrl || activeSession.id || '';
     try {
       const newDeck = await flashcardService.generateDeck(videoId, activeSession.title, generateCount);
       setActiveDeck(newDeck);

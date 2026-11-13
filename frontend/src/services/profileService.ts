@@ -276,70 +276,7 @@ class ProfileService {
       }
     } catch (err) {}
 
-    // Fallback historical seed
-    const now = Date.now();
-    return [
-      {
-        id: 1,
-        session_id: 'session-pl-04',
-        video_id: 'demo_polymers',
-        title: 'Polymers & Macromolecules',
-        course_name: 'Engineering Chemistry',
-        last_timestamp_sec: 402,
-        last_timestamp_formatted: formatVideoTime(402),
-        duration_sec: 1110,
-        duration_formatted: formatVideoTime(1110),
-        progress_percent: 36.2,
-        completed: false,
-        updated_at: now - 14 * 60 * 1000,
-        updated_at_relative: formatRelativeDate(now - 14 * 60 * 1000),
-      },
-      {
-        id: 2,
-        session_id: 'session-oc-02',
-        video_id: 'demo_oc_02',
-        title: 'SN1 vs SN2 Nucleophilic Substitution',
-        course_name: 'Organic Chemistry',
-        last_timestamp_sec: 1240,
-        last_timestamp_formatted: formatVideoTime(1240),
-        duration_sec: 1240,
-        duration_formatted: formatVideoTime(1240),
-        progress_percent: 100.0,
-        completed: true,
-        updated_at: now - 2 * 86400 * 1000,
-        updated_at_relative: formatRelativeDate(now - 2 * 86400 * 1000),
-      },
-      {
-        id: 3,
-        session_id: 'session-ch-01',
-        video_id: 'demo_ch_01',
-        title: 'Electron Configurations & Periodic Trends',
-        course_name: 'General Chemistry',
-        last_timestamp_sec: 980,
-        last_timestamp_formatted: formatVideoTime(980),
-        duration_sec: 980,
-        duration_formatted: formatVideoTime(980),
-        progress_percent: 100.0,
-        completed: true,
-        updated_at: now - 4 * 86400 * 1000,
-        updated_at_relative: formatRelativeDate(now - 4 * 86400 * 1000),
-      },
-      {
-        id: 4,
-        session_id: 'session-py-03',
-        video_id: 'demo_electromagnetism',
-        title: 'Electromagnetic Induction & Faraday\'s Law',
-        course_name: 'Classical Mechanics',
-        last_timestamp_sec: 720,
-        last_timestamp_formatted: formatVideoTime(720),
-        duration_sec: 1800,
-        duration_formatted: formatVideoTime(1800),
-        progress_percent: 40.0,
-        completed: false,
-        updated_at: now - 5 * 86400 * 1000,
-        updated_at_relative: formatRelativeDate(now - 5 * 86400 * 1000),
-      },
-    ];
+    return [];
   }
 
   /**

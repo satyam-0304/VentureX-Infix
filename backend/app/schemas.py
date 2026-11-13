@@ -18,7 +18,7 @@ class Citation(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    video_id: str = Field(default="demo_polymers", description="YouTube video ID or slug")
+    video_id: str = Field(default="", description="YouTube video ID or slug")
     current_timestamp: float = Field(default=0.0, description="Current video playback position in seconds", alias="currentTimestamp")
     query: str = Field(default="", description="Student's question or doubt", alias="userQuery")
     mode: QAMode = Field(default=QAMode.STANDARD, description="Explanation mode")
@@ -251,7 +251,7 @@ class FlashcardDeck(BaseModel):
 
 
 class GenerateFlashcardsRequest(BaseModel):
-    video_id: str = Field(default="demo_polymers", description="YouTube video ID or slug")
+    video_id: str = Field(default="", description="YouTube video ID or slug")
     session_id: Optional[str] = None
     title: Optional[str] = None
     target_count: int = Field(default=18, ge=5, le=40, description="Target number of cards to generate (15-20 default)")

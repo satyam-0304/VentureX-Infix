@@ -11,3 +11,4 @@
     "backend:test": "cd backend && .venv/Scripts/pytest tests -v"
   }
 }
+

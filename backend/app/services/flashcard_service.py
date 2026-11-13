@@ -86,256 +86,11 @@ def init_flashcard_db():
     """)
 
     conn.commit()
-
-    # Seed default deck for Polymers lecture if not existing
-    cur.execute("SELECT id FROM flashcard_decks WHERE video_id = 'demo_polymers' LIMIT 1")
-    existing_deck = cur.fetchone()
-    if not existing_deck:
-        _seed_demo_flashcards(cur)
-        conn.commit()
-
     conn.close()
 
 
 def _seed_demo_flashcards(cur: sqlite3.Cursor):
-    """Seed comprehensive default 18-card deck for Polymers lecture."""
-    now_ms = int(time.time() * 1000)
-    deck_id = "deck_polymers_core"
-    default_user_id = "usr_simona_01"
-
-    cur.execute("""
-        INSERT INTO flashcard_decks (
-            id, user_id, video_id, session_id, title, description,
-            card_count, mastered_count, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        deck_id,
-        default_user_id,
-        "demo_polymers",
-        "session-pl-04",
-        "Polymers & Macromolecules: Core Principles",
-        "Grounded flashcards covering monomer chemistry, polymerization mechanisms, synthetic elastomers, and cross-linking kinetics.",
-        18,
-        3,
-        now_ms - (3 * 86400 * 1000),
-        now_ms,
-    ))
-
-    cards_data = [
-        # Chapter 1: Introduction to Polymers
-        (
-            "What is the fundamental definition of a monomer in polymer chemistry?",
-            "A monomer is a small, reactive molecule that can undergo chemical reactions with other monomers to form a repeating structural unit within a high-molecular-weight polymer chain.",
-            "Definition",
-            "Introduction to Polymers",
-            45.0,
-            "00:45",
-            "very_confident",
-            1
-        ),
-        (
-            "What distinguishes natural polymers from synthetic polymers?",
-            "Natural polymers (e.g., DNA, cellulose, proteins) are synthesized biologically by living organisms, whereas synthetic polymers (e.g., polyethylene, nylon, Teflon) are manufactured industrially via petrochemistry.",
-            "Concept",
-            "Introduction to Polymers",
-            120.0,
-            "02:00",
-            "somewhat_confident",
-            0
-        ),
-        (
-            "How does Degree of Polymerization (DP) relate monomer mass to total polymer mass?",
-            "DP represents the number of repeating monomer units: M_polymer = DP × M_monomer (where M is molar mass). Higher DP significantly increases tensile strength and melting point.",
-            "Formula",
-            "Introduction to Polymers",
-            195.0,
-            "03:15",
-            "unreviewed",
-            0
-        ),
-        (
-            "What structural property makes macromolecules exhibit viscoelasticity?",
-            "Macromolecules have long, entangled molecular chains. Under sudden stress they behave like elastic solids, but under sustained load the chains slide past each other, exhibiting viscous flow.",
-            "Important Fact",
-            "Introduction to Polymers",
-            270.0,
-            "04:30",
-            "not_confident",
-            1
-        ),
-
-        # Chapter 2: Addition vs Condensation Polymerization
-        (
-            "What is the key mechanistic difference between addition and condensation polymerization?",
-            "Addition (chain-growth) polymerization involves opening double bonds without forming any by-products. Condensation (step-growth) links bifunctional monomers with the elimination of small molecules like H2O or HCl.",
-            "Concept",
-            "Addition vs Condensation Polymerization",
-            340.0,
-            "05:40",
-            "very_confident",
-            0
-        ),
-        (
-            "What are the three core kinetic stages of free-radical addition polymerization?",
-            "1. Initiation (homolytic cleavage of initiator to form free radicals)\n2. Propagation (rapid radical addition to monomer double bonds)\n3. Termination (combination or disproportionation of radical chains)",
-            "Concept",
-            "Addition vs Condensation Polymerization",
-            420.0,
-            "07:00",
-            "somewhat_confident",
-            1
-        ),
-        (
-            "What role does Benzoyl Peroxide play in free-radical polymerization?",
-            "Benzoyl peroxide acts as a thermal initiator: upon heating to ~80°C, the weak O-O peroxy bond breaks homolytically to generate benzoyloxy and phenyl radicals that attack alkene monomers.",
-            "Important Fact",
-            "Addition vs Condensation Polymerization",
-            510.0,
-            "08:30",
-            "very_confident",
-            0
-        ),
-        (
-            "What condition is strictly required for monomers to undergo condensation polymerization?",
-            "Monomers must possess at least two reactive functional groups (bifunctional or polyfunctional), such as dicarboxylic acids and diamines/diols (e.g., adipic acid + hexamethylenediamine -> Nylon 6,6).",
-            "Definition",
-            "Addition vs Condensation Polymerization",
-            590.0,
-            "09:50",
-            "unreviewed",
-            0
-        ),
-        (
-            "Why do condensation polymers generally have lower molecular weights than addition polymers?",
-            "Condensation follows step-growth kinetics where high molecular weight is achieved only at extremely high conversion rates (>99%), whereas addition forms high-MW chains immediately in early stages.",
-            "Important Fact",
-            "Addition vs Condensation Polymerization",
-            670.0,
-            "11:10",
-            "not_confident",
-            0
-        ),
-
-        # Chapter 3: Molecular Weight & Structural Architecture
-        (
-            "What is the mathematical difference between Number-Average (Mn) and Weight-Average (Mw) molecular weights?",
-            "Mn = Σ(Ni·Mi) / Σ(Ni) based on mole fraction.\nMw = Σ(Ni·Mi²) / Σ(Ni·Mi) weighted toward larger molecules. Mw is always ≥ Mn in polydisperse systems.",
-            "Formula",
-            "Molecular Weight & Structural Architecture",
-            750.0,
-            "12:30",
-            "unreviewed",
-            1
-        ),
-        (
-            "What is Polydispersity Index (PDI) and what does PDI = 1.0 signify?",
-            "PDI = Mw / Mn. A PDI equal to 1.0 indicates a perfectly monodisperse polymer where all individual chains have identical lengths (common in natural proteins, rare in synthetic polymers).",
-            "Definition",
-            "Molecular Weight & Structural Architecture",
-            830.0,
-            "13:50",
-            "somewhat_confident",
-            0
-        ),
-        (
-            "How does polymer branching affect polymer density and crystallinity?",
-            "High branching (e.g., LDPE) prevents chains from packing closely, reducing crystallinity and density. Linear polymers (e.g., HDPE) pack tightly into ordered crystal lattices, increasing rigidity and melting point.",
-            "Concept",
-            "Molecular Weight & Structural Architecture",
-            915.0,
-            "15:15",
-            "unreviewed",
-            0
-        ),
-        (
-            "What is cross-linking and how does it transform a thermoplastic into a thermoset?",
-            "Cross-linking creates covalent bonds between adjacent polymer chains, forming a continuous 3D network. This permanently locks the chains in place, preventing melting upon reheating (thermosetting).",
-            "Concept",
-            "Molecular Weight & Structural Architecture",
-            995.0,
-            "16:35",
-            "somewhat_confident",
-            0
-        ),
-
-        # Chapter 4: Industrial Applications & Vulcanization
-        (
-            "What chemical process occurs during the vulcanization of natural rubber?",
-            "Sulfur is heated with polyisoprene at ~140°C in the presence of zinc oxide accelerators. Sulfur forms disulfide (-S-S-) cross-links across allylic positions, transforming sticky latex into durable, elastic rubber.",
-            "Concept",
-            "Industrial Applications & Vulcanization",
-            1060.0,
-            "17:40",
-            "very_confident",
-            1
-        ),
-        (
-            "What is the Glass Transition Temperature (Tg) and why is it critical for polymer engineering?",
-            "Tg is the temperature range where an amorphous polymer transitions from a hard, brittle 'glassy' state to a flexible, compliant 'rubbery' state. Rubber must operate above its Tg, while polystyrene operates below its Tg.",
-            "Definition",
-            "Industrial Applications & Vulcanization",
-            1130.0,
-            "18:50",
-            "not_confident",
-            0
-        ),
-        (
-            "What is the chemical repeating unit of Polyethylene Terephthalate (PET)?",
-            "[-CO-C6H4-CO-O-CH2-CH2-O-]n, produced by esterification of terephthalic acid with ethylene glycol, widely used in recyclable beverage containers and polyester synthetic fibers.",
-            "Formula",
-            "Industrial Applications & Vulcanization",
-            1190.0,
-            "19:50",
-            "unreviewed",
-            0
-        ),
-        (
-            "What environmental degradation mechanism challenges non-biodegradable synthetic polymers?",
-            "Most synthetic polymers possess non-polar carbon-carbon backbones resistant to microbial enzymatic breakdown and moisture, requiring high-energy UV photodegradation that leads to persistent microplastics.",
-            "Important Fact",
-            "Industrial Applications & Vulcanization",
-            1260.0,
-            "21:00",
-            "unreviewed",
-            0
-        ),
-        (
-            "What makes conductive polymers like Polyacetylene capable of carrying electrical current?",
-            "Polyacetylene has an alternating single and double bond conjugated pi-electron system along its backbone. When chemically doped with iodine or arsenic pentafluoride, mobile polarons and solitons conduct electricity.",
-            "Important Fact",
-            "Industrial Applications & Vulcanization",
-            1320.0,
-            "22:00",
-            "somewhat_confident",
-            0
-        ),
-    ]
-
-    for idx, (q, a, cat, ch, sec, formatted, conf, bkmk) in enumerate(cards_data):
-        card_id = f"c_poly_{idx+1:02d}"
-        cur.execute("""
-            INSERT INTO flashcards (
-                id, deck_id, question, answer, category, chapter_title,
-                timestamp_sec, timestamp_formatted, confidence, is_bookmarked,
-                review_count, last_reviewed_at, order_index, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            card_id,
-            deck_id,
-            q,
-            a,
-            cat,
-            ch,
-            sec,
-            formatted,
-            conf,
-            bkmk,
-            1 if conf != "unreviewed" else 0,
-            now_ms - (idx * 3600 * 1000) if conf != "unreviewed" else None,
-            idx,
-            now_ms - (idx * 60000),
-            now_ms,
-        ))
+    pass
 
 
 class FlashcardService:
@@ -606,119 +361,7 @@ Rules:
 
     @staticmethod
     def _generate_heuristic_cards(video_id: str, title: str, chapters: list, target_count: int) -> List[Dict[str, Any]]:
-        """Generates lecture-grounded flashcards based on transcript & chapter distribution."""
-        demo_key = resolve_demo_key(video_id)
-        if demo_key and demo_key in DEMO_VIDEOS and demo_key == "demo_polymers":
-            # Return high-yield polymers set
-            return [
-                {
-                    "question": "What is the defining chemical structure of a polymer?",
-                    "answer": "A polymer is a macromolecule composed of many repeated sub-units (monomers) joined by covalent bonds.",
-                    "category": "Definition",
-                    "chapter_title": "Introduction to Polymers",
-                    "timestamp_sec": 45.0,
-                },
-                {
-                    "question": "What distinguishes natural polymers from synthetic polymers?",
-                    "answer": "Natural polymers occur in nature (proteins, starch, cellulose, DNA). Synthetic polymers are manufactured chemically (nylon, polyethylene, teflon).",
-                    "category": "Concept",
-                    "chapter_title": "Introduction to Polymers",
-                    "timestamp_sec": 120.0,
-                },
-                {
-                    "question": "What is the formula for calculating Degree of Polymerization (DP)?",
-                    "answer": "DP = Total Molecular Weight of Polymer / Molecular Weight of Repeating Unit.",
-                    "category": "Formula",
-                    "chapter_title": "Introduction to Polymers",
-                    "timestamp_sec": 195.0,
-                },
-                {
-                    "question": "What is the key mechanism in addition polymerization?",
-                    "answer": "Monomers with unsaturated double or triple bonds link together without producing any secondary by-products.",
-                    "category": "Concept",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 340.0,
-                },
-                {
-                    "question": "What happens during the initiation step of free-radical polymerization?",
-                    "answer": "An initiator molecule (such as benzoyl peroxide) homolytically cleaves under heat/light to produce active free radicals.",
-                    "category": "Concept",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 420.0,
-                },
-                {
-                    "question": "What by-product is typically eliminated during condensation polymerization?",
-                    "answer": "Small molecules such as water (H2O), hydrochloric acid (HCl), or methanol are eliminated during linkage.",
-                    "category": "Important Fact",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 590.0,
-                },
-                {
-                    "question": "What is the difference between Mn and Mw molecular weights?",
-                    "answer": "Mn (Number-Average) measures the arithmetic mean of chain lengths, while Mw (Weight-Average) is weighted toward heavier chains.",
-                    "category": "Formula",
-                    "chapter_title": "Molecular Weight & Structural Architecture",
-                    "timestamp_sec": 750.0,
-                },
-                {
-                    "question": "What does a Polydispersity Index (PDI) of 1.0 signify?",
-                    "answer": "A PDI of 1.0 indicates a perfectly monodisperse polymer sample where all polymer chains have identical molecular weights.",
-                    "category": "Definition",
-                    "chapter_title": "Molecular Weight & Structural Architecture",
-                    "timestamp_sec": 830.0,
-                },
-                {
-                    "question": "How does cross-linking affect polymer thermal reversibility?",
-                    "answer": "Cross-linking creates irreversible covalent bonds between chains, preventing them from melting when heated (thermosetting polymer).",
-                    "category": "Concept",
-                    "chapter_title": "Molecular Weight & Structural Architecture",
-                    "timestamp_sec": 995.0,
-                },
-                {
-                    "question": "What chemical element is used to vulcanize natural rubber?",
-                    "answer": "Sulfur is heated with natural polyisoprene to form disulfide cross-links across the polymer strands.",
-                    "category": "Important Fact",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1060.0,
-                },
-                {
-                    "question": "What is the Glass Transition Temperature (Tg)?",
-                    "answer": "The temperature threshold below which an amorphous polymer behaves as a hard, brittle glass, and above which it behaves as a rubbery flexible solid.",
-                    "category": "Definition",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1130.0,
-                },
-                {
-                    "question": "What repeating linkage defines Nylon 6,6?",
-                    "answer": "Amide linkage (-CO-NH-) formed by condensing adipic acid with hexamethylenediamine.",
-                    "category": "Formula",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1210.0,
-                },
-                {
-                    "question": "Why are thermoplastics recyclable whereas thermosets are not?",
-                    "answer": "Thermoplastics possess linear or branched chains held by secondary van der Waals forces that melt upon heating, whereas thermosets have permanent covalent 3D networks.",
-                    "category": "Concept",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1280.0,
-                },
-                {
-                    "question": "What is the function of plasticizers added to rigid PVC?",
-                    "answer": "Plasticizers embed between polymer chains, increasing free volume and molecular mobility to render brittle PVC flexible.",
-                    "category": "Important Fact",
-                    "chapter_title": "Industrial Applications & Vulcanization",
-                    "timestamp_sec": 1340.0,
-                },
-                {
-                    "question": "What is copolymerization and why is it used?",
-                    "answer": "Polymerizing two or more distinct monomers together to synthesize a material combining physical properties of both (e.g., SBR rubber).",
-                    "category": "Definition",
-                    "chapter_title": "Addition vs Condensation Polymerization",
-                    "timestamp_sec": 650.0,
-                },
-            ]
-
-        # Dynamic / generic generation from chapters and title
+        """Generates lecture-grounded flashcards based on transcript and chapter distribution."""
         cards = []
         ch_list = chapters if chapters else []
         categories = ["Definition", "Concept", "Formula", "Important Fact"]
@@ -726,22 +369,22 @@ Rules:
 
         for i in range(num_cards):
             ch_item = ch_list[i % len(ch_list)] if ch_list else None
-            ch_name = ch_item.title if ch_item else "General Principles"
+            ch_name = ch_item.title if ch_item else f"Section {i+1}"
             st_time = float(ch_item.start_sec if ch_item else i * 90)
             cat = categories[i % len(categories)]
 
             if cat == "Definition":
-                q = f"What is the formal definition of {ch_name} in {title}?"
-                a = f"{ch_name} denotes the systematic foundational principle underlying {title}, establishing its functional properties and observable behavior."
+                q = f"What is the core definition or concept of '{ch_name}' in {title}?"
+                a = f"'{ch_name}' represents a primary conceptual foundation introduced in {title}, establishing key terminology and frameworks for this lecture."
             elif cat == "Concept":
-                q = f"How does {ch_name} operate mechanistically during this lecture?"
-                a = f"It governs the energetic and structural transformations where component elements interact according to verifiable chemical and physical laws."
+                q = f"How does '{ch_name}' fit into the broader topic of {title}?"
+                a = f"It articulates the core principles and relationships explored in this section, connecting key ideas into a coherent conceptual model."
             elif cat == "Formula":
-                q = f"What quantitative relationship or governing equation describes {ch_name}?"
-                a = f"Rate / Proportion = k · [Reactants]^n, where the kinetic constant k depends directly on system temperature and activation energy."
+                q = f"What analytical method, formulation, or rule is associated with '{ch_name}'?"
+                a = f"A structured relationship linking the core inputs, governing conditions, and observable results discussed in '{ch_name}'."
             else:
-                q = f"What key empirical fact or practical application of {ch_name} was highlighted?"
-                a = f"This phenomenon is widely leveraged in modern industrial engineering and experimental laboratory verification for high-efficiency synthesis."
+                q = f"What key takeaway or application of '{ch_name}' was emphasized?"
+                a = f"This key concept illustrates practical application and analytical problem-solving within {title}."
 
             cards.append({
                 "question": q,
@@ -993,12 +636,11 @@ Rules:
         a = req.current_answer or ""
         vid = req.video_id
 
-        # 1. Action: Simplify
         if action == "simplify":
             reply = (
                 f"**Simplified Explanation:**\n\n"
-                f"In everyday terms: {q} means that {a.lower() if a else 'components bond into a continuous functional structure'}.\n\n"
-                f"Key takeaway: Small units join repeatedly into one strong, durable chain without unnecessary complexity."
+                f"{a if a else 'This concept represents a foundational principle from your lecture.'}\n\n"
+                f"**Key Takeaway:** Focus on the core relationship between the inputs and results described in this section."
             )
             return AiAssistResponse(
                 reply=reply,
@@ -1006,62 +648,43 @@ Rules:
                 suggested_answer=f"Simplified: {a[:160]}..." if len(a) > 160 else a,
                 suggested_category="Concept",
             )
-
-        # 2. Action: Analogy
         elif action == "analogy":
             reply = (
                 f"💡 **Everyday Analogy for '{q}':**\n\n"
-                f"Imagine a box of individual paperclips (monomers). If you hook them together one by one into a long necklace, "
-                f"you get a polymer! \n\n"
-                f"If you then cross-link several necklaces side-to-side with twist ties (like sulfur in vulcanized rubber), "
-                f"they can no longer slide past each other—forming a rigid, resilient 3D mesh that bounces back into shape!"
+                f"Think of {q} like modular building blocks: each individual element carries specific properties, and when combined in sequence, they establish a robust, interconnected system."
             )
             return AiAssistResponse(
                 reply=reply,
-                suggested_question=f"Analogy: How can we visualize {q}?",
-                suggested_answer="Visualize paperclips hooked into long chains, with cross-links acting like twist ties that lock the structure into an elastic network.",
+                suggested_question=f"Analogy for: {q}",
+                suggested_answer=f"Modular components working together in an interconnected sequence.",
                 suggested_category="Concept",
             )
-
-        # 3. Action: Explain In Depth
         elif action == "explain":
             reply = (
                 f"📖 **Deep-Dive Explanation:**\n\n"
                 f"**Concept:** {q}\n\n"
                 f"**Underlying Mechanism:** {a}\n\n"
-                f"In academic exams and lab applications, questions on this topic test whether you understand how molecular-level structure "
-                f"directly dictates bulk physical properties (such as tensile strength, melting temperature, and flexibility)."
+                f"In exams and applications, questions on this topic test whether you understand the fundamental reasoning and relationships covered in this lecture segment."
             )
             return AiAssistResponse(reply=reply)
-
-        # 4. Action: Generate More Cards on this concept
         elif action == "generate_more":
             new_cards = [
                 CreateCardRequest(
-                    question=f"What is the primary factor limiting the rate of {q[:45]}?",
-                    answer=f"Kinetic chain transfer and steric hindrance around reactive sites dictate the termination speed and overall yield.",
+                    question=f"What is the core principle governing {q[:45]}?",
+                    answer=f"The fundamental rules and principles introduced in this lecture segment.",
                     category="Concept",
-                    chapter_title="Advanced Applications",
-                    timestamp_sec=510.0,
-                ),
-                CreateCardRequest(
-                    question=f"How can students experimentally verify {q[:45]}?",
-                    answer="Using Differential Scanning Calorimetry (DSC) or Gel Permeation Chromatography (GPC) to characterize thermal transitions and molecular weight distributions.",
-                    category="Important Fact",
-                    chapter_title="Experimental Methods",
-                    timestamp_sec=780.0,
+                    chapter_title="Related Concepts",
+                    timestamp_sec=0.0,
                 ),
             ]
-            reply = f"Generated 2 complementary high-yield study cards grounded in this topic! Click **Add to Deck** below to include them."
+            reply = f"Generated a complementary study card grounded in this topic! Click **Add to Deck** below to include it."
             return AiAssistResponse(reply=reply, generated_cards=new_cards)
-
-        # 5. Default / Custom Chat
         else:
             msg = req.user_message or "Tell me more about this card"
             reply = (
-                f"Regarding **'{q}'**: \n\n"
+                f"Regarding **'{q}'**:\n\n"
                 f"{a}\n\n"
-                f"To master this for your upcoming assessments, focus on the distinction between kinetic initiation versus equilibrium conversion!"
+                f"To master this for your upcoming assessments, review how this concept connects to the preceding and following lecture segments."
             )
             return AiAssistResponse(reply=reply)
 

@@ -35,7 +35,6 @@ export const DEFAULT_SESSIONS: LearningSession[] = [
       }
     ],
     updatedAt: Date.now()
-<<<<<<< HEAD
   },
   {
     id: 'session-ch-01',
@@ -259,7 +258,5 @@ export const DEFAULT_SESSIONS: LearningSession[] = [
     discussions: [],
     chatHistory: [],
     updatedAt: Date.now() - 432000000
-=======
->>>>>>> e8ff837b4b984d55f5209175e0c251f584f30cf6
   }
 ];

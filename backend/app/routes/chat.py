@@ -106,9 +106,21 @@ def _deterministic_mock_response(query: str, current_sec: float, sliced_items: l
 async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
     """Answer a student's question grounded strictly in the video transcript at the current timestamp."""
     try:
-        # 1. Retrieve full transcript for video
-        transcript = get_demo_transcript(request.video_id)
-        video_title = get_demo_video_title(request.video_id)
+        # 1. Retrieve full transcript for video (check dynamic cache, demo fixture, or live fetch)
+        from app.services.dynamic_cache import get_dynamic_video
+        dyn = get_dynamic_video(request.video_id)
+        if dyn and dyn.get("transcript"):
+            transcript = dyn["transcript"]
+            video_title = dyn.get("title", f"Lecture ({request.video_id})")
+        else:
+            transcript = get_demo_transcript(request.video_id)
+            video_title = get_demo_video_title(request.video_id)
+            if not transcript and len(request.video_id) >= 11:
+                try:
+                    from app.services.transcript import fetch_youtube_transcript
+                    transcript = fetch_youtube_transcript(request.video_id)
+                except Exception:
+                    pass
 
         # 2. Slice transcript around current playback timestamp [t-120s, t+60s]
         sliced_items = slice_transcript(
@@ -139,6 +151,7 @@ async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
                     video_title=video_title,
                 )
 
+            # Gemini request handling
             resp = generate_structured(
                 prompt=user_prompt,
                 response_model=ChatResponse,
@@ -157,7 +170,7 @@ async def ask_contextual_doubt(request: ChatRequest) -> ChatResponse:
                 resp.concept_tag = f"{resp.concept_tag} (Simplified)"
             return resp
 
-        # 5. Fallback for offline development / test runs without API key
+        # 5. Fallback for offline development / test runs or transient API limits
         return _deterministic_mock_response(
             query=request.query,
             current_sec=request.current_timestamp,

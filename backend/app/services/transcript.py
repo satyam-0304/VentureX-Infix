@@ -9,6 +9,7 @@ import logging
 from typing import Any
 from youtube_transcript_api import YouTubeTranscriptApi
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,12 +47,10 @@ def extract_youtube_id(url_or_id: str) -> str:
     return clean_input
 
 
-def fetch_youtube_transcript(video_id: str, allow_placeholder: bool = False) -> list[dict[str, Any]]:
-    """Retrieve complete transcript for a given video ID with multi-language and auto-translation fallback.
-    
-    Returns full transcript segments covering the entire video from start to finish.
-    If no transcript is available and allow_placeholder is False, returns empty list so
-    callers can properly notify the user instead of hallucinating.
+def fetch_youtube_transcript(video_id: str) -> list[dict[str, Any]]:
+    """Fetch real captions, using stored transcripts only for recognized demos.
+
+    Empty list means captions could not be retrieved. Never fabricate a transcript.
     """
     from app.services.sample_data import DEMO_VIDEOS, get_demo_transcript
 
@@ -67,14 +66,15 @@ def fetch_youtube_transcript(video_id: str, allow_placeholder: bool = False) -> 
         preferred_languages = ["en", "en-US", "en-GB", "hi", "en-IN"]
         try:
             transcript = transcript_list.find_transcript(preferred_languages)
-            return transcript.fetch()
+            entries = transcript.fetch()
+            return [_normalize_entry(entry) for entry in entries]
         except Exception:
             pass
 
         # Fallback: Auto-translate whatever caption track is available to English
         try:
             for t in transcript_list:
-                return t.translate("en").fetch()
+                return [_normalize_entry(entry) for entry in t.translate("en").fetch()]
         except Exception:
             pass
 
@@ -86,14 +86,20 @@ def fetch_youtube_transcript(video_id: str, allow_placeholder: bool = False) -> 
     if demo_transcript:
         return demo_transcript
 
-    if not allow_placeholder:
-        logger.warning(f"No transcript found for video {video_id}")
-        return []
+    logger.warning("No transcript found for video %s", video_id)
+    return []
 
-    logger.info(f"Generating minimal placeholder transcript for video {video_id}")
-    return [
-        {"start": 0.0, "duration": 30.0, "text": f"Lecture video ({video_id}) initialized. Interactive chapters synchronized."},
-        {"start": 30.0, "duration": 60.0, "text": "Core topic introduction and conceptual definitions."},
-        {"start": 90.0, "duration": 90.0, "text": "Detailed analysis and principle exploration."},
-        {"start": 180.0, "duration": 120.0, "text": "Worked examples and practical application summary."},
-    ]
+
+def _normalize_entry(entry: Any) -> dict[str, Any]:
+    """Normalize transcript library objects and legacy dictionaries."""
+    if isinstance(entry, dict):
+        return {
+            "start": float(entry.get("start", 0)),
+            "duration": float(entry.get("duration", 0)),
+            "text": str(entry.get("text", "")),
+        }
+    return {
+        "start": float(getattr(entry, "start", 0)),
+        "duration": float(getattr(entry, "duration", 0)),
+        "text": str(getattr(entry, "text", "")),
+    }

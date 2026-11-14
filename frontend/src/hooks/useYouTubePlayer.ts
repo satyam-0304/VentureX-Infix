@@ -134,6 +134,20 @@ export function useYouTubePlayer({
   const prevTimeRef = useRef(initialTime);
   const videoId = extractYouTubeVideoId(videoUrlOrId);
 
+  // Keep stable ref to callbacks so changes in parent handlers don't re-trigger player reloads
+  const callbacksRef = useRef({ onTimeUpdate, onPlayStateChange, onSeek });
+  useEffect(() => {
+    callbacksRef.current = { onTimeUpdate, onPlayStateChange, onSeek };
+  });
+
+  // Track initial time only when video changes, not on every re-render
+  const initialTimeRef = useRef(initialTime);
+  const prevVideoIdRef = useRef<string | null>(null);
+  if (prevVideoIdRef.current !== videoId) {
+    prevVideoIdRef.current = videoId;
+    initialTimeRef.current = initialTime;
+  }
+
   // Stop polling interval
   const stopPolling = useCallback(() => {
     if (pollTimerRef.current !== null) {
@@ -154,23 +168,23 @@ export function useYouTubePlayer({
         if (typeof cur === 'number' && !isNaN(cur)) {
           // Detect manual or jump seek within player
           if (Math.abs(cur - prevTimeRef.current) > 2) {
-            onSeek?.(prevTimeRef.current, cur);
+            callbacksRef.current.onSeek?.(prevTimeRef.current, cur);
           }
           prevTimeRef.current = cur;
           setCurrentTime(cur);
 
           if (typeof dur === 'number' && !isNaN(dur) && dur > 0) {
             setDuration(dur);
-            onTimeUpdate?.(cur, dur);
+            callbacksRef.current.onTimeUpdate?.(cur, dur);
           } else {
-            onTimeUpdate?.(cur, 0);
+            callbacksRef.current.onTimeUpdate?.(cur, 0);
           }
         }
       } catch (err) {
         // Player might be re-buffering or transitioning
       }
     }, pollIntervalMs);
-  }, [pollIntervalMs, onSeek, onTimeUpdate, stopPolling]);
+  }, [pollIntervalMs, stopPolling]);
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -197,10 +211,10 @@ export function useYouTubePlayer({
       .then(() => {
         if (!isSubscribed || !containerRef.current) return;
 
-        // If player already exists, load video directly
+        // If player already exists and video hasn't changed, do nothing
         if (playerRef.current) {
           try {
-            playerRef.current.loadVideoById(videoId, initialTime);
+            playerRef.current.cueVideoById(videoId, initialTimeRef.current);
             setIsLoading(false);
             return;
           } catch (e) {
@@ -231,7 +245,7 @@ export function useYouTubePlayer({
             modestbranding: 1,
             playsinline: 1,
             disablekb: 1,
-            start: Math.floor(initialTime)
+            start: Math.floor(initialTimeRef.current)
           },
           events: {
             onReady: (event) => {
@@ -241,8 +255,8 @@ export function useYouTubePlayer({
               setIsLoading(false);
               const dur = event.target.getDuration();
               if (dur > 0) setDuration(dur);
-              if (initialTime > 0) {
-                event.target.seekTo(initialTime, true);
+              if (initialTimeRef.current > 0) {
+                event.target.seekTo(initialTimeRef.current, true);
               }
             },
             onStateChange: (event) => {
@@ -252,21 +266,21 @@ export function useYouTubePlayer({
 
               if (event.data === YT.PlayerState.PLAYING) {
                 setIsPlaying(true);
-                onPlayStateChange?.(true);
+                callbacksRef.current.onPlayStateChange?.(true);
                 startPolling();
               } else if (event.data === YT.PlayerState.PAUSED) {
                 setIsPlaying(false);
-                onPlayStateChange?.(false);
+                callbacksRef.current.onPlayStateChange?.(false);
                 stopPolling();
                 if (playerRef.current) {
                   const cur = playerRef.current.getCurrentTime();
                   setCurrentTime(cur);
                   const dur = playerRef.current.getDuration();
-                  onTimeUpdate?.(cur, dur);
+                  callbacksRef.current.onTimeUpdate?.(cur, dur);
                 }
               } else if (event.data === YT.PlayerState.ENDED) {
                 setIsPlaying(false);
-                onPlayStateChange?.(false);
+                callbacksRef.current.onPlayStateChange?.(false);
                 stopPolling();
               }
             },
@@ -295,7 +309,7 @@ export function useYouTubePlayer({
       isSubscribed = false;
       stopPolling();
     };
-  }, [videoId, initialTime, startPolling, stopPolling, onPlayStateChange, onTimeUpdate, videoUrlOrId]);
+  }, [videoId, startPolling, stopPolling, videoUrlOrId]);
 
   // Controls
   const play = useCallback(() => {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Check, 
-  Volume2, 
   Trash2, 
   Clock, 
   Send, 
@@ -28,7 +27,6 @@ export const LectureTabs: React.FC = () => {
 
   const [noteText, setNoteText] = useState('');
   const [discussionInput, setDiscussionInput] = useState('');
-  const [speakingWord, setSpeakingWord] = useState<string | null>(null);
 
   const formatTime = formatVideoTime;
 
@@ -47,20 +45,6 @@ export const LectureTabs: React.FC = () => {
     if (discussionInput.trim()) {
       postDiscussion(discussionInput.trim());
       setDiscussionInput('');
-    }
-  };
-
-  // Web Speech API text-to-speech for vocabulary
-  const speakTerm = (word: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setSpeakingWord(word);
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      utterance.onend = () => setSpeakingWord(null);
-      utterance.onerror = () => setSpeakingWord(null);
-      window.speechSynthesis.speak(utterance);
     }
   };
 
@@ -101,7 +85,7 @@ export const LectureTabs: React.FC = () => {
               : 'text-slate-400 hover:text-slate-700 border-transparent'
           }`}
         >
-          Transcript
+          Transcript ({activeSession.transcript.length})
         </button>
 
         <button
@@ -163,35 +147,6 @@ export const LectureTabs: React.FC = () => {
                   <span className="text-xs text-slate-700 font-medium leading-snug">{obj}</span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Core Vocabulary with Text-to-Speech triggers */}
-          <div className="pt-1">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              Core Vocabulary (Click to Listen)
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {activeSession.vocabulary.map((v, i) => {
-                const isSpeaking = speakingWord === v.term;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => speakTerm(v.term)}
-                    className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      isSpeaking
-                        ? 'bg-indigo-600 text-white shadow-sm scale-105'
-                        : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
-                    }`}
-                    title={`Pronounce "${v.term}"`}
-                  >
-                    <span>{v.term}</span>
-                    <Volume2
-                      className={`w-3 h-3 ${isSpeaking ? 'animate-pulse text-white' : 'text-slate-400'}`}
-                    />
-                  </button>
-                );
-              })}
             </div>
           </div>
         </div>
@@ -263,31 +218,41 @@ export const LectureTabs: React.FC = () => {
       {/* TAB PANEL 3: Transcript */}
       {activeTab === 'transcript' && (
         <div id="tabPanelTranscript" className="pt-4 space-y-1.5 max-h-64 overflow-y-auto pr-1 animate-fade-in">
-          {activeSession.transcript.map((line) => {
-            const isCurrent =
-              currentVideoTime >= line.timestamp &&
-              currentVideoTime < line.timestamp + 50;
+          {activeSession.transcript.length === 0 ? (
+            <div className="text-center py-8 text-slate-400 text-xs">
+              <p className="font-semibold text-slate-500 mb-1">Synchronizing Dialogue Track</p>
+              <p>Fetching full transcript for this lecture...</p>
+            </div>
+          ) : (
+            activeSession.transcript.map((line) => {
+              const isCurrent =
+                currentVideoTime >= line.timestamp &&
+                currentVideoTime < line.timestamp + 30;
 
-            return (
-              <div
-                key={line.id}
-                onClick={() => seekTo(line.timestamp)}
-                className={`p-2 rounded-lg cursor-pointer transition-all flex items-start space-x-3 ${
-                  isCurrent
-                    ? 'bg-indigo-50 border border-indigo-200 shadow-xs'
-                    : 'hover:bg-indigo-50/50'
-                }`}
-                title={`Jump to ${line.formattedTime}`}
-              >
-                <span className="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5 shrink-0">
-                  {line.formattedTime}
-                </span>
-                <p className={`text-xs leading-snug ${isCurrent ? 'text-indigo-900 font-medium' : 'text-slate-700'}`}>
-                  {line.text}
-                </p>
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={line.id}
+                  className={`p-2 rounded-lg transition-all flex items-start space-x-3 ${
+                    isCurrent
+                      ? 'bg-indigo-50 border border-indigo-200 shadow-xs'
+                      : 'hover:bg-indigo-50/50'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => seekTo(line.timestamp)}
+                    className="font-mono text-[11px] text-indigo-600 font-semibold mt-0.5 shrink-0 px-1.5 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 cursor-pointer transition-colors"
+                    title={`Jump video to ${line.formattedTime}`}
+                  >
+                    {line.formattedTime}
+                  </button>
+                  <p className={`text-xs leading-snug ${isCurrent ? 'text-indigo-900 font-medium' : 'text-slate-700'}`}>
+                    {line.text}
+                  </p>
+                </div>
+              );
+            })
+          )}
         </div>
       )}
 

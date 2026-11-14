@@ -10,6 +10,7 @@
  */
 
 export interface GeminiContextPayload {
+  videoId?: string;
   sessionTitle: string;
   courseTopic: string;
   currentTimestamp: number;
@@ -19,6 +20,7 @@ export interface GeminiContextPayload {
   recentNotes?: string[];
   userQuery: string;
   mode?: 'standard' | 'simpler' | 'analogy' | 'step_by_step' | 'hinglish';
+  transcriptSlice?: string;
 }
 
 export interface GeminiResponse {
@@ -38,10 +40,16 @@ class GeminiService {
     // If backend proxy endpoint is configured, invoke real Gemini API
     if (this.apiEndpoint) {
       try {
+        const payloadToSend = {
+          video_id: payload.videoId || 'demo_polymers',
+          current_timestamp: payload.currentTimestamp,
+          query: payload.userQuery,
+          mode: payload.mode || 'standard',
+        };
         const response = await fetch(this.apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payloadToSend),
         });
         if (response.ok) {
           const data = await response.json();

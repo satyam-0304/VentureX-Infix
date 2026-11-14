@@ -180,23 +180,18 @@ def init_profile_db():
             default_user_id,
             "simona@lurnix.edu",
             "Simona Biles",
-            "Pre-engineering student specializing in chemistry, polymer structures, and reaction kinetics.",
+            "Lifelong learner using Lurnix interactive video learning companion.",
             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&h=240&q=80",
-            "Stanford Online Learning & Engineering",
-            "GATE / Chemistry Advanced 2026",
+            "Online Learning & Engineering",
+            "Competitive / University Exams",
             p_hash,
             p_salt,
             now_ms - (30 * 86400 * 1000),
             now_ms,
         ))
 
-        # Seed realistic initial watch history
-        history_seeds = [
-            ("session-pl-04", "demo_polymers", "Polymers & Macromolecules", "Engineering Chemistry", 402.0, 1110.0, 36.2, 0, now_ms - (14 * 60 * 1000)),
-            ("session-oc-02", "demo_oc_02", "SN1 vs SN2 Nucleophilic Substitution", "Organic Chemistry", 1240.0, 1240.0, 100.0, 1, now_ms - (2 * 86400 * 1000)),
-            ("session-ch-01", "demo_ch_01", "Electron Configurations & Periodic Trends", "General Chemistry", 980.0, 980.0, 100.0, 1, now_ms - (4 * 86400 * 1000)),
-            ("session-py-03", "demo_electromagnetism", "Electromagnetic Induction & Faraday's Law", "Classical Mechanics", 720.0, 1800.0, 40.0, 0, now_ms - (5 * 86400 * 1000)),
-        ]
+        # Initial watch history and quiz attempts start clean
+        history_seeds: list[tuple] = []
         for sid, vid, title, cname, last_sec, dur_sec, pct, comp, up_at in history_seeds:
             cur.execute("""
                 INSERT INTO watch_history (
@@ -205,14 +200,7 @@ def init_profile_db():
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (default_user_id, sid, vid, title, cname, last_sec, dur_sec, pct, comp, up_at))
 
-        # Seed initial quiz attempts
-        quiz_seeds = [
-            ("demo_polymers", 1, "Monomer Polymerization", 1, 1.0, now_ms - (14 * 60 * 1000)),
-            ("demo_polymers", 2, "Synthetic vs Natural", 1, 1.0, now_ms - (10 * 60 * 1000)),
-            ("demo_oc_02", 1, "Carbocation Stability", 1, 1.0, now_ms - (2 * 86400 * 1000)),
-            ("demo_ch_01", 1, "Aufbau Principle", 1, 1.0, now_ms - (4 * 86400 * 1000)),
-            ("demo_electromagnetism", 1, "Magnetic Flux", 1, 1.0, now_ms - (5 * 86400 * 1000)),
-        ]
+        quiz_seeds: list[tuple] = []
         for vid, qid, tag, correct, sc, att_at in quiz_seeds:
             cur.execute("""
                 INSERT INTO quiz_attempts (

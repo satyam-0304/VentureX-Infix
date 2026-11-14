@@ -132,7 +132,7 @@ export const SessionSidebar: React.FC = () => {
       title,
       code,
       title.split(' ')[0],
-      trimmedUrl || 'https://www.youtube.com/watch?v=k38j3pG6KXY',
+      trimmedUrl || '',
       finalData ? {
         durationSeconds: finalData.durationSec,
         chapters: finalData.chapters,
@@ -444,49 +444,6 @@ export const SessionSidebar: React.FC = () => {
                     {ingestStatus}
                   </p>
                 )}
-              </div>
-
-              {/* Quick Academic Demo Presets */}
-              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 space-y-1.5">
-                <span className="text-[10px] font-semibold text-slate-500 block">Quick Academic Demos:</span>
-                <div className="grid grid-cols-3 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const url = 'https://www.youtube.com/watch?v=k38j3pG6KXY';
-                      setNewVideoUrl(url);
-                      handleUrlBlurOrAnalyze(url);
-                    }}
-                    className="py-1 px-1.5 rounded-md bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-[10px] font-semibold text-slate-700 hover:text-indigo-700 text-center truncate transition-colors cursor-pointer shadow-xs"
-                    title="Polymers & Macromolecules"
-                  >
-                    🧪 Polymers
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const url = 'https://www.youtube.com/watch?v=aircAruvnKk';
-                      setNewVideoUrl(url);
-                      handleUrlBlurOrAnalyze(url);
-                    }}
-                    className="py-1 px-1.5 rounded-md bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 text-[10px] font-semibold text-slate-700 hover:text-purple-700 text-center truncate transition-colors cursor-pointer shadow-xs"
-                    title="Neural Networks & Backpropagation"
-                  >
-                    🧠 Neural Nets
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const url = 'https://www.youtube.com/watch?v=bHTqg7nQ2iE';
-                      setNewVideoUrl(url);
-                      handleUrlBlurOrAnalyze(url);
-                    }}
-                    className="py-1 px-1.5 rounded-md bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 text-[10px] font-semibold text-slate-700 hover:text-cyan-700 text-center truncate transition-colors cursor-pointer shadow-xs"
-                    title="Electromagnetic Induction"
-                  >
-                    ⚡ Physics
-                  </button>
-                </div>
               </div>
 
               {/* Course Name */}

@@ -2,176 +2,40 @@ import { LearningSession } from '../types';
 
 export const DEFAULT_SESSIONS: LearningSession[] = [
   {
-    id: 'session-pl-04',
-    code: 'PL',
-    title: 'Polymers & Macromolecules',
-    courseName: 'Engineering Chemistry',
-    topic: 'Polymers',
-    lessonTitle: 'Watch your lesson',
-    lessonNumber: 'Video Lesson 04',
-    videoUrl: 'https://www.youtube.com/watch?v=k38j3pG6KXY',
-    posterUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFJVrl_Xru8fqMdzEDJE3EM4k3zpBMz4H5jwdEUzAMkO_rAC5yMGdX2NzMez72-Jg7cPgpw9xqw_87neaSAffbiBGuQ7ThDq2hxFAtAtxv-X-wQ_lt7OPTTkCL2BCX_jp_dJ-gCCHITACIos7DQW04R3G3Za5OGCARJNEgNmPhNrwYKPoENfT2kTyZoONS1h7ShPiIUNucMPDaZc0OagyDNRtsgSfeW5n6RJd6sfyXudWfHe0q5Ju8',
-    durationSeconds: 1110, // 18m 30s
-    savedPlaybackPosition: 402, // 06:42
-    instructor: 'Professor Vance',
-    rating: 4.9,
-    reviewCount: 142,
+    id: 'session-default-01',
+    code: 'LX',
+    title: 'New Learning Session',
+    courseName: 'Online Lecture',
+    topic: 'Lecture',
+    lessonTitle: 'Enter a YouTube URL to start',
+    lessonNumber: 'Session 01',
+    videoUrl: '',
+    posterUrl: '',
+    durationSeconds: 0,
+    savedPlaybackPosition: 0,
+    instructor: 'AI Tutor',
+    rating: 5.0,
+    reviewCount: 0,
     objectives: [
-      'Monomer polymerization mechanics',
-      'Thermoplastic vs Thermosetting',
-      'Synthetic biomaterial applications'
+      'Paste any YouTube lecture URL to auto-generate chapters, notes, and quiz checkpoints.'
     ],
-    vocabulary: [
-      { term: 'Monomer' },
-      { term: 'Polymerization' },
-      { term: 'Elastomer' },
-      { term: 'Cross-linking' }
-    ],
-    tasks: [
-      {
-        id: 'task-1',
-        stepNumber: 1,
-        title: 'Understanding Check',
-        subtitle: 'Knowledge Retrieval Checkpoint',
-        timestampTarget: 60,
-        status: 'active',
-        type: 'mcq',
-        question: 'What is the primary characteristic of polymers?',
-        options: [
-          { id: 'opt-a', label: 'They consist of repeating monomer units.', isCorrect: true },
-          { id: 'opt-b', label: 'They are always strictly metallic.', isCorrect: false },
-          { id: 'opt-c', label: 'They contain only one single atom.', isCorrect: false },
-          { id: 'opt-d', label: 'They cannot form continuous chains.', isCorrect: false }
-        ],
-        explanation: 'Polymers are large macromolecules formed by covalently linking many small, repeating structural units called monomers.',
-        selectedOptionId: 'opt-a',
-        answeredCorrectly: true
-      },
-      {
-        id: 'task-2',
-        stepNumber: 2,
-        title: 'Quick Quiz: Synthetic vs Natural',
-        subtitle: '2 min',
-        timestampTarget: 120,
-        status: 'active',
-        type: 'mcq',
-        question: 'Which of these is a naturally occurring biopolymer?',
-        options: [
-          { id: 'opt-2a', label: 'Cellulose / Starch', isCorrect: true },
-          { id: 'opt-2b', label: 'Nylon-6,6', isCorrect: false },
-          { id: 'opt-2c', label: 'PTFE (Teflon)', isCorrect: false },
-          { id: 'opt-2d', label: 'Polyethylene terephthalate', isCorrect: false }
-        ],
-        explanation: 'Cellulose and starch are polysaccharides synthesized naturally by plant cells as primary structural and energy-storage polymers.',
-        selectedOptionId: undefined,
-        answeredCorrectly: false
-      },
-      {
-        id: 'task-3',
-        stepNumber: 3,
-        title: 'Concept Explanation: Cross-linking',
-        subtitle: '09:15',
-        timestampTarget: 180,
-        status: 'locked',
-        type: 'concept',
-        contentDescription: 'Observe how sulfur bridges link polyisoprene strands during vulcanization to increase tensile durability.'
-      },
-      {
-        id: 'task-4',
-        stepNumber: 4,
-        title: 'Real-world Application Challenge',
-        subtitle: 'Locked',
-        timestampTarget: 240,
-        status: 'locked',
-        type: 'challenge',
-        contentDescription: 'Synthesize biomimetic hydrogels for drug delivery stents with targeted dissolution triggers.'
-      },
-      {
-        id: 'task-5',
-        stepNumber: 5,
-        title: 'Lesson Revision & Summary',
-        subtitle: 'Locked',
-        timestampTarget: 300,
-        status: 'locked',
-        type: 'revision',
-        contentDescription: 'Comprehensive end-of-module assessment covering addition and condensation mechanisms.'
-      }
-    ],
-    notes: [
-      { id: 'note-1', timestamp: 74, formattedTime: '01:14', text: 'Monomers bond via condensation or addition mechanisms.', createdAt: Date.now() - 3600000 },
-      { id: 'note-2', timestamp: 220, formattedTime: '03:40', text: 'Cross-linking drastically restricts sliding of polymer chains.', createdAt: Date.now() - 1800000 },
-      { id: 'note-3', timestamp: 322, formattedTime: '05:22', text: 'Thermosetting plastics cannot be remelted once cured.', createdAt: Date.now() - 900000 }
-    ],
-    bookmarks: [
-      { id: 'bm-1', timestamp: 60, formattedTime: '01:00', title: 'Task 1: Monomer chains' },
-      { id: 'bm-2', timestamp: 120, formattedTime: '02:00', title: 'Task 2: Natural vs synthetic' },
-      { id: 'bm-3', timestamp: 180, formattedTime: '03:00', title: 'Task 3: Cross-linking & Vulcanization' }
-    ],
-    transcript: [
-      { id: 'tr-1', timestamp: 10, formattedTime: '00:10', text: 'Welcome everyone to Engineering Chemistry. Today we delve into polymers and macromolecular structures.' },
-      { id: 'tr-2', timestamp: 60, formattedTime: '01:00', text: 'Notice how polymers are created by long chains of small repeating subunits named monomers.' },
-      { id: 'tr-3', timestamp: 120, formattedTime: '02:00', text: "Let's distinguish between naturally occurring polymers like cellulose versus synthetics like nylon." },
-      { id: 'tr-4', timestamp: 180, formattedTime: '03:00', text: 'Cross-linking chemically binds polymer chains into 3D structural networks, altering elasticity.' },
-      { id: 'tr-5', timestamp: 240, formattedTime: '04:00', text: 'In modern aerospace and biomedical engineering, high-performance thermoplastics replace heavy metals.' },
-      { id: 'tr-6', timestamp: 300, formattedTime: '05:00', text: 'Addition polymerization proceeds via free-radical or ionic catalysts without byproduct condensation molecules.' }
-    ],
-    chapters: [
-      {
-        id: 1,
-        title: 'Introduction & Classification by Source',
-        start_sec: 0,
-        end_sec: 240,
-        summary: 'Definition of macromolecules and classification into natural, semi-synthetic, and synthetic polymers.'
-      },
-      {
-        id: 2,
-        title: 'Addition Polymerization Mechanics',
-        start_sec: 240,
-        end_sec: 540,
-        summary: 'Chain-growth polymerization through initiator radicals, propagation, and termination.'
-      },
-      {
-        id: 3,
-        title: 'Condensation & Cross-linking',
-        start_sec: 540,
-        end_sec: 840,
-        summary: 'Step-growth polycondensation mechanisms, Nylon 6,6 synthesis, and vulcanization.'
-      },
-      {
-        id: 4,
-        title: 'Biomaterials & Modern Applications',
-        start_sec: 840,
-        end_sec: 1110,
-        summary: 'Smart polymers, viscoelastic properties, and engineering materials.'
-      }
-    ],
-    discussions: [
-      {
-        id: 'disc-1',
-        authorName: 'Marcus Chen',
-        timeAgo: '14m ago',
-        content: 'Does cross-linking always make a polymer brittle, or can it remain flexible?',
-        upvotes: 6,
-        hasUpvoted: false
-      },
-      {
-        id: 'disc-2',
-        authorName: 'Aisha Patel',
-        timeAgo: '2h ago',
-        content: 'Vulcanization of rubber is such a neat real-world example of sulfur cross-links!',
-        upvotes: 11,
-        hasUpvoted: false
-      }
-    ],
+    vocabulary: [],
+    tasks: [],
+    notes: [],
+    bookmarks: [],
+    transcript: [],
+    chapters: [],
+    discussions: [],
     chatHistory: [
       {
-        id: 'chat-0',
+        id: 'chat-init',
         sender: 'ai',
-        text: "Hello Simona! I'm here alongside your Polymers lecture. Ask me anything about monomers, elastomer mechanics, or quiz help!",
+        text: 'Welcome to Lurnix! Paste any YouTube educational video URL to begin studying with synchronized interactive chapters, quizzes, and grounded AI tutor support.',
         timestamp: 'Just now'
       }
     ],
     updatedAt: Date.now()
+<<<<<<< HEAD
   },
   {
     id: 'session-ch-01',
@@ -395,6 +259,7 @@ export const DEFAULT_SESSIONS: LearningSession[] = [
     discussions: [],
     chatHistory: [],
     updatedAt: Date.now() - 432000000
+=======
+>>>>>>> e8ff837b4b984d55f5209175e0c251f584f30cf6
   }
 ];
-

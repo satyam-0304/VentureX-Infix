@@ -624,30 +624,6 @@ const VideoPlayerInternal: React.FC = () => {
                 )}
               </div>
 
-              {/* Quick Preset Demonstrations */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-400">Quick Academic Presets:</span>
-                <div className="flex flex-col space-y-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleLoadPreset('https://www.youtube.com/watch?v=k38j3pG6KXY')}
-                    className="flex items-center justify-between text-left text-xs bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 px-3 py-2 rounded-xl text-slate-200 transition-colors cursor-pointer"
-                  >
-                    <span className="truncate">Polymers & Macromolecules (Chemistry)</span>
-                    <span className="text-[10px] text-indigo-400 font-mono shrink-0 ml-2">Load</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleLoadPreset('https://www.youtube.com/watch?v=aircAruvnKk')}
-                    className="flex items-center justify-between text-left text-xs bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 px-3 py-2 rounded-xl text-slate-200 transition-colors cursor-pointer"
-                  >
-                    <span className="truncate">Neural Networks & Backpropagation (CS)</span>
-                    <span className="text-[10px] text-indigo-400 font-mono shrink-0 ml-2">Load</span>
-                  </button>
-                </div>
-              </div>
-
               <div className="flex items-center justify-end space-x-2 pt-2">
                 <button
                   type="button"

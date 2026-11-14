@@ -13,3 +13,4 @@ Write-Host "Frontend directory: $FrontendDir" -ForegroundColor Yellow
 Set-Location $FrontendDir
 Write-Host "Starting Vite server on http://localhost:5173..." -ForegroundColor Green
 npm run dev
+

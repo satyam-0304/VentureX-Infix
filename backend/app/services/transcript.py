@@ -1,14 +1,13 @@
-"""YouTube Transcript Extraction Service for Lurnix.
+'''YouTube Transcript Extraction Service for Lurnix.
 
 Handles multi-format URL parsing, local demo fixture shortcuts,
 and multi-language YouTube caption scraping with auto-translation fallback.
-"""
+''' 
 
 import re
 import logging
 from typing import Any
 from youtube_transcript_api import YouTubeTranscriptApi
-
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +52,24 @@ def fetch_youtube_transcript(video_id: str) -> list[dict[str, Any]]:
     Empty list means captions could not be retrieved. Never fabricate a transcript.
     """
     from app.services.sample_data import DEMO_VIDEOS, get_demo_transcript
+    from app.services.dynamic_cache import get_dynamic_video
 
-    # 1. Zero-latency demo fixture shortcut
+    # 1. Zero‑latency demo fixture shortcut (checks DEMO_VIDEOS and demo transcripts)
+    demo_transcript = get_demo_transcript(video_id)
+    if demo_transcript:
+        return demo_transcript
+
     if video_id in DEMO_VIDEOS:
         return DEMO_VIDEOS[video_id]["transcript"]
 
-    # 2. Live YouTube API extraction
+    # 2. Check dynamic runtime cache for previously ingested videos
+    dyn = get_dynamic_video(video_id)
+    if dyn and dyn.get("transcript"):
+        return dyn["transcript"]
+
+    # 3. Live YouTube API extraction
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-
         # Try native English, Hindi, or Indian English transcripts
         preferred_languages = ["en", "en-US", "en-GB", "hi", "en-IN"]
         try:
@@ -70,18 +78,16 @@ def fetch_youtube_transcript(video_id: str) -> list[dict[str, Any]]:
             return [_normalize_entry(entry) for entry in entries]
         except Exception:
             pass
-
         # Fallback: Auto-translate whatever caption track is available to English
         try:
             for t in transcript_list:
                 return [_normalize_entry(entry) for entry in t.translate("en").fetch()]
         except Exception:
             pass
-
     except Exception as e:
         logger.warning(f"Live transcript fetch failed for {video_id}: {e}")
 
-    # 3. Demo fixture lookup
+    # 4. Demo fixture lookup (already attempted above)
     demo_transcript = get_demo_transcript(video_id)
     if demo_transcript:
         return demo_transcript

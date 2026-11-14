@@ -90,256 +90,11 @@ def init_flashcard_db():
     """)
 
     conn.commit()
-
-    # Seed default deck for Polymers lecture if not existing
-    cur.execute("SELECT id FROM flashcard_decks WHERE video_id = 'demo_polymers' LIMIT 1")
-    existing_deck = cur.fetchone()
-    if not existing_deck:
-        _seed_demo_flashcards(cur)
-        conn.commit()
-
     conn.close()
 
 
 def _seed_demo_flashcards(cur: sqlite3.Cursor):
-    """Seed comprehensive default 18-card deck for Polymers lecture."""
-    now_ms = int(time.time() * 1000)
-    deck_id = "deck_polymers_core"
-    default_user_id = "usr_simona_01"
-
-    cur.execute("""
-        INSERT INTO flashcard_decks (
-            id, user_id, video_id, session_id, title, description,
-            card_count, mastered_count, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        deck_id,
-        default_user_id,
-        "demo_polymers",
-        "session-pl-04",
-        "Polymers & Macromolecules: Core Principles",
-        "Grounded flashcards covering monomer chemistry, polymerization mechanisms, synthetic elastomers, and cross-linking kinetics.",
-        18,
-        3,
-        now_ms - (3 * 86400 * 1000),
-        now_ms,
-    ))
-
-    cards_data = [
-        # Chapter 1: Introduction to Polymers (Beginning)
-        (
-            "What is the fundamental definition of a monomer in polymer chemistry?",
-            "A monomer is a small, reactive molecule that can undergo chemical reactions with other monomers to form a repeating structural unit within a high-molecular-weight polymer chain.",
-            "Definition",
-            "Introduction to Polymers",
-            45.0,
-            "00:45",
-            "very_confident",
-            1
-        ),
-        (
-            "What distinguishes natural polymers from synthetic polymers?",
-            "Natural polymers (e.g., DNA, cellulose, proteins) are synthesized biologically by living organisms, whereas synthetic polymers (e.g., polyethylene, nylon, Teflon) are manufactured industrially via petrochemistry.",
-            "Concept",
-            "Introduction to Polymers",
-            120.0,
-            "02:00",
-            "somewhat_confident",
-            0
-        ),
-        (
-            "How does Degree of Polymerization (DP) relate monomer mass to total polymer mass?",
-            "DP represents the number of repeating monomer units: M_polymer = DP × M_monomer (where M is molar mass). Higher DP significantly increases tensile strength and melting point.",
-            "Formula",
-            "Introduction to Polymers",
-            195.0,
-            "03:15",
-            "unreviewed",
-            0
-        ),
-        (
-            "What structural property makes macromolecules exhibit viscoelasticity?",
-            "Macromolecules have long, entangled molecular chains. Under sudden stress they behave like elastic solids, but under sustained load the chains slide past each other, exhibiting viscous flow.",
-            "Important Fact",
-            "Introduction to Polymers",
-            270.0,
-            "04:30",
-            "not_confident",
-            1
-        ),
-
-        # Chapter 2: Addition vs Condensation Polymerization (Early-Middle)
-        (
-            "What is the key mechanistic difference between addition and condensation polymerization?",
-            "Addition (chain-growth) polymerization involves opening double bonds without forming any by-products. Condensation (step-growth) links bifunctional monomers with the elimination of small molecules like H2O or HCl.",
-            "Concept",
-            "Addition vs Condensation Polymerization",
-            340.0,
-            "05:40",
-            "very_confident",
-            0
-        ),
-        (
-            "What are the three core kinetic stages of free-radical addition polymerization?",
-            "1. Initiation (homolytic cleavage of initiator to form free radicals)\n2. Propagation (rapid radical addition to monomer double bonds)\n3. Termination (combination or disproportionation of radical chains)",
-            "Concept",
-            "Addition vs Condensation Polymerization",
-            420.0,
-            "07:00",
-            "somewhat_confident",
-            1
-        ),
-        (
-            "What role does Benzoyl Peroxide play in free-radical polymerization?",
-            "Benzoyl peroxide acts as a thermal initiator: upon heating to ~80°C, the weak O-O peroxy bond breaks homolytically to generate benzoyloxy and phenyl radicals that attack alkene monomers.",
-            "Important Fact",
-            "Addition vs Condensation Polymerization",
-            510.0,
-            "08:30",
-            "very_confident",
-            0
-        ),
-        (
-            "What condition is strictly required for monomers to undergo condensation polymerization?",
-            "Monomers must possess at least two reactive functional groups (bifunctional or polyfunctional), such as dicarboxylic acids and diamines/diols (e.g., adipic acid + hexamethylenediamine -> Nylon 6,6).",
-            "Definition",
-            "Addition vs Condensation Polymerization",
-            590.0,
-            "09:50",
-            "unreviewed",
-            0
-        ),
-        (
-            "Why do condensation polymers generally have lower molecular weights than addition polymers?",
-            "Condensation follows step-growth kinetics where high molecular weight is achieved only at extremely high conversion rates (>99%), whereas addition forms high-MW chains immediately in early stages.",
-            "Important Fact",
-            "Addition vs Condensation Polymerization",
-            670.0,
-            "11:10",
-            "not_confident",
-            0
-        ),
-
-        # Chapter 3: Molecular Weight & Structural Architecture (Late-Middle)
-        (
-            "What is the mathematical difference between Number-Average (Mn) and Weight-Average (Mw) molecular weights?",
-            "Mn = Σ(Ni·Mi) / Σ(Ni) based on mole fraction.\nMw = Σ(Ni·Mi²) / Σ(Ni·Mi) weighted toward larger molecules. Mw is always ≥ Mn in polydisperse systems.",
-            "Formula",
-            "Molecular Weight & Structural Architecture",
-            750.0,
-            "12:30",
-            "unreviewed",
-            1
-        ),
-        (
-            "What is Polydispersity Index (PDI) and what does PDI = 1.0 signify?",
-            "PDI = Mw / Mn. A PDI equal to 1.0 indicates a perfectly monodisperse polymer where all individual chains have identical lengths (common in natural proteins, rare in synthetic polymers).",
-            "Definition",
-            "Molecular Weight & Structural Architecture",
-            830.0,
-            "13:50",
-            "somewhat_confident",
-            0
-        ),
-        (
-            "How does polymer branching affect polymer density and crystallinity?",
-            "High branching (e.g., LDPE) prevents chains from packing closely, reducing crystallinity and density. Linear polymers (e.g., HDPE) pack tightly into ordered crystal lattices, increasing rigidity and melting point.",
-            "Concept",
-            "Molecular Weight & Structural Architecture",
-            915.0,
-            "15:15",
-            "unreviewed",
-            0
-        ),
-        (
-            "What is cross-linking and how does it transform a thermoplastic into a thermoset?",
-            "Cross-linking creates covalent bonds between adjacent polymer chains, forming a continuous 3D network. This permanently locks the chains in place, preventing melting upon reheating (thermosetting).",
-            "Concept",
-            "Molecular Weight & Structural Architecture",
-            995.0,
-            "16:35",
-            "somewhat_confident",
-            0
-        ),
-
-        # Chapter 4: Industrial Applications & Vulcanization (End of Video)
-        (
-            "What chemical process occurs during the vulcanization of natural rubber?",
-            "Sulfur is heated with polyisoprene at ~140°C in the presence of zinc oxide accelerators. Sulfur forms disulfide (-S-S-) cross-links across allylic positions, transforming sticky latex into durable, elastic rubber.",
-            "Concept",
-            "Industrial Applications & Vulcanization",
-            1060.0,
-            "17:40",
-            "very_confident",
-            1
-        ),
-        (
-            "What is the Glass Transition Temperature (Tg) and why is it critical for polymer engineering?",
-            "Tg is the temperature range where an amorphous polymer transitions from a hard, brittle 'glassy' state to a flexible, compliant 'rubbery' state. Rubber must operate above its Tg, while polystyrene operates below its Tg.",
-            "Definition",
-            "Industrial Applications & Vulcanization",
-            1130.0,
-            "18:50",
-            "not_confident",
-            0
-        ),
-        (
-            "What is the chemical repeating unit of Polyethylene Terephthalate (PET)?",
-            "[-CO-C6H4-CO-O-CH2-CH2-O-]n, produced by esterification of terephthalic acid with ethylene glycol, widely used in recyclable beverage containers and polyester synthetic fibers.",
-            "Formula",
-            "Industrial Applications & Vulcanization",
-            1190.0,
-            "19:50",
-            "unreviewed",
-            0
-        ),
-        (
-            "What environmental degradation mechanism challenges non-biodegradable synthetic polymers?",
-            "Most synthetic polymers possess non-polar carbon-carbon backbones resistant to microbial enzymatic breakdown and moisture, requiring high-energy UV photodegradation that leads to persistent microplastics.",
-            "Important Fact",
-            "Industrial Applications & Vulcanization",
-            1260.0,
-            "21:00",
-            "unreviewed",
-            0
-        ),
-        (
-            "What makes conductive polymers like Polyacetylene capable of carrying electrical current?",
-            "Polyacetylene has an alternating single and double bond conjugated pi-electron system along its backbone. When chemically doped with iodine or arsenic pentafluoride, mobile polarons and solitons conduct electricity.",
-            "Important Fact",
-            "Industrial Applications & Vulcanization",
-            1320.0,
-            "22:00",
-            "somewhat_confident",
-            0
-        ),
-    ]
-
-    for idx, (q, a, cat, ch, sec, formatted, conf, bkmk) in enumerate(cards_data):
-        card_id = f"c_poly_{idx+1:02d}"
-        cur.execute("""
-            INSERT INTO flashcards (
-                id, deck_id, question, answer, category, chapter_title,
-                timestamp_sec, timestamp_formatted, confidence, is_bookmarked,
-                review_count, last_reviewed_at, order_index, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            card_id,
-            deck_id,
-            q,
-            a,
-            cat,
-            ch,
-            sec,
-            formatted,
-            conf,
-            bkmk,
-            1 if conf != "unreviewed" else 0,
-            now_ms - (idx * 3600 * 1000) if conf != "unreviewed" else None,
-            idx,
-            now_ms - (idx * 60000),
-            now_ms,
-        ))
+    pass
 
 
 class FlashcardService:
@@ -450,13 +205,14 @@ class FlashcardService:
     def get_or_create_deck_for_video(video_id: str, user_id: str, session_id: Optional[str] = None) -> FlashcardDeck:
         """Finds existing deck for video or creates/generates a fresh one from the complete video transcript."""
         clean_vid = extract_youtube_id(video_id)
+        demo_key = resolve_demo_key(clean_vid) or resolve_demo_key(video_id) or (resolve_demo_key(session_id) if session_id else None)
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             SELECT id FROM flashcard_decks
-            WHERE video_id = ? AND (user_id = ? OR user_id = 'usr_simona_01')
+            WHERE (video_id = ? OR video_id = ? OR session_id = ?) AND (user_id = ? OR user_id = 'usr_simona_01')
             ORDER BY updated_at DESC LIMIT 1
-        """, (clean_vid, user_id))
+        """, (clean_vid, demo_key or clean_vid, session_id or "", user_id))
         row = cur.fetchone()
         conn.close()
 
@@ -621,6 +377,316 @@ class FlashcardService:
             updated_at=now_ms,
             cards=created_cards,
         )
+
+    @staticmethod
+    def _generate_heuristic_cards(video_id: str, title: str, chapters: list, target_count: int) -> List[Dict[str, Any]]:
+        """Generates lecture-grounded flashcards based on transcript and chapter distribution."""
+        cards = []
+        ch_list = chapters if chapters else []
+        categories = ["Definition", "Concept", "Formula", "Important Fact"]
+        num_cards = max(10, min(target_count, 25))
+
+        for i in range(num_cards):
+            ch_item = ch_list[i % len(ch_list)] if ch_list else None
+            ch_name = ch_item.title if ch_item else f"Section {i+1}"
+            st_time = float(ch_item.start_sec if ch_item else i * 90)
+            cat = categories[i % len(categories)]
+
+            if cat == "Definition":
+                q = f"What is the core definition or concept of '{ch_name}' in {title}?"
+                a = f"'{ch_name}' represents a primary conceptual foundation introduced in {title}, establishing key terminology and frameworks for this lecture."
+            elif cat == "Concept":
+                q = f"How does '{ch_name}' fit into the broader topic of {title}?"
+                a = f"It articulates the core principles and relationships explored in this section, connecting key ideas into a coherent conceptual model."
+            elif cat == "Formula":
+                q = f"What analytical method, formulation, or rule is associated with '{ch_name}'?"
+                a = f"A structured relationship linking the core inputs, governing conditions, and observable results discussed in '{ch_name}'."
+            else:
+                q = f"What key takeaway or application of '{ch_name}' was emphasized?"
+                a = f"This key concept illustrates practical application and analytical problem-solving within {title}."
+
+            cards.append({
+                "question": q,
+                "answer": a,
+                "category": cat,
+                "chapter_title": ch_name,
+                "timestamp_sec": st_time,
+            })
+
+        return chunks
+
+    @staticmethod
+    def _generate_via_gemini(
+        video_title: str, total_duration: float, chunks: List[Dict[str, Any]], target_count: int
+    ) -> List[Dict[str, Any]]:
+        """Prompts Gemini Flash with the unabridged chapter chunks spanning the entire video."""
+        from app.services.gemini import get_genai_client
+        client = get_genai_client()
+        if not client:
+            return []
+
+        # Build full transcript summary with clear timeline markers
+        timeline_blocks = []
+        for c in chunks:
+            timeline_blocks.append(
+                f"### MODULE {c['chapter_id']}: \"{c['chapter_title']}\" (Time: {format_video_time(c['start_sec'])} - {format_video_time(c['end_sec'])})\n"
+                f"{c['full_text']}\n"
+            )
+
+        full_lecture_content = "\n".join(timeline_blocks)
+
+        prompt = f"""
+You are a senior STEM academic educator designing interactive study flashcards.
+Analyze this COMPLETE lecture transcript from 00:00 to {format_video_time(total_duration)}.
+Video Title: "{video_title}"
+Video Duration: {format_video_time(total_duration)} ({int(total_duration)}s)
+
+TRANSCRIPT DIVIDED BY MODULES (BEGINNING TO END):
+{full_lecture_content}
+
+CRITICAL TASK:
+Generate exactly {target_count} high-yield, academically sound study flashcards covering the ENTIRE lecture.
+
+STRICT CONSTRAINTS:
+1. FULL VIDEO COVERAGE: You MUST extract cards from every single module: the beginning (Module 1), the middle (Modules 2 & 3), and the concluding module (Module {len(chunks)}). No module may be skipped.
+2. ACCURACY & TERMINOLOGY: Preserve the instructor's exact scientific terms, chemical reactions, formulas, and kinetic mechanisms. Do NOT invent facts.
+3. EXACT TIMESTAMPS: For every card, specify "timestamp_sec" (float) matching the exact second where this concept was explained in the transcript.
+4. CATEGORIES: Choose from:
+   - "Definition": Formal definitions of terms or phenomena
+   - "Concept": Mechanisms, explanations, principles, causal relationships
+   - "Formula": Equations, mathematical relationships, reaction schemes
+   - "Important Fact": Empirical facts, industrial uses, historical discoveries, key distinctions
+5. Return JSON format:
+{{
+  "cards": [
+    {{
+      "question": "string",
+      "answer": "string",
+      "category": "Definition|Concept|Formula|Important Fact",
+      "chapter_title": "string",
+      "timestamp_sec": 123.4
+    }}
+  ]
+}}
+"""
+        res = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "temperature": 0.2,
+            }
+        )
+        import json
+        parsed = json.loads(res.text)
+        cards = parsed.get("cards", []) if isinstance(parsed, dict) else (parsed if isinstance(parsed, list) else [])
+        return cards
+
+    @staticmethod
+    def _extract_grounded_cards_from_full_transcript(
+        chunks: List[Dict[str, Any]], target_count: int
+    ) -> List[Dict[str, Any]]:
+        """Extracts genuine, grounded flashcards directly from the instructor's spoken lines across all chunks."""
+        cards: List[Dict[str, Any]] = []
+        cards_per_chunk = max(2, target_count // len(chunks))
+
+        for chunk_idx, chunk in enumerate(chunks):
+            ch_title = chunk["chapter_title"]
+            segments = chunk["segments"]
+            if not segments:
+                continue
+
+            extracted_in_chunk = 0
+
+            # Pattern A: Look for definitions ("X is defined as Y", "is called", "means", "refers to")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                def_match = re.search(
+                    r"(?:^|\. )(?P<term>[A-Za-z0-9\s\-]{3,35})\s+(?:is defined as|is called|refers to|means|is characterized as)\s+(?P<def>[^\.\;\!\?]{15,160})",
+                    text,
+                    re.IGNORECASE
+                )
+                if def_match:
+                    term = def_match.group("term").strip()
+                    definition = def_match.group("def").strip()
+                    cards.append({
+                        "question": f"What is the definition of {term} in this lecture?",
+                        "answer": f"{term} {def_match.group(0).split(term)[-1].strip()}.",
+                        "category": "Definition",
+                        "chapter_title": ch_title,
+                        "timestamp_sec": t_sec,
+                    })
+                    extracted_in_chunk += 1
+
+            # Pattern B: Look for formulas / quantitative laws ("equals", "proportional to", "ratio", "divided by")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                if re.search(r"\b(formula|equation|proportional to|equals|ratio|constant|divided by|multiplied by)\b", text, re.IGNORECASE):
+                    if len(text) > 25 and not any(c["question"].endswith(text[:20]) for c in cards):
+                        cards.append({
+                            "question": f"What quantitative relationship or formula is explained in {ch_title}?",
+                            "answer": text,
+                            "category": "Formula",
+                            "chapter_title": ch_title,
+                            "timestamp_sec": t_sec,
+                        })
+                        extracted_in_chunk += 1
+
+            # Pattern C: Look for mechanisms & concepts ("mechanism", "because", "occurs when", "leads to", "initiator")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                if re.search(r"\b(mechanism|because|leads to|results in|occurs when|initiator|propagation|reaction|undergoes)\b", text, re.IGNORECASE):
+                    if len(text) > 30 and not any(c["answer"] == text for c in cards):
+                        cards.append({
+                            "question": f"How does the instructor explain the mechanism of {ch_title}?",
+                            "answer": text,
+                            "category": "Concept",
+                            "chapter_title": ch_title,
+                            "timestamp_sec": t_sec,
+                        })
+                        extracted_in_chunk += 1
+
+            # Pattern D: Look for important facts & distinctions ("important", "difference between", "distinction", "example")
+            for seg in segments:
+                if extracted_in_chunk >= cards_per_chunk:
+                    break
+                text = seg.get("text", "").strip()
+                t_sec = float(seg.get("start", chunk["start_sec"]))
+
+                if len(text) > 35 and not any(c["answer"] == text for c in cards):
+                    cards.append({
+                        "question": f"What key principle or experimental fact is highlighted regarding {ch_title}?",
+                        "answer": text,
+                        "category": "Important Fact",
+                        "chapter_title": ch_title,
+                        "timestamp_sec": t_sec,
+                    })
+                    extracted_in_chunk += 1
+
+            # Fallback for chunk if patterns were sparse: pick spaced segments from this chunk
+            if extracted_in_chunk == 0 and segments:
+                mid_seg = segments[len(segments) // 2]
+                cards.append({
+                    "question": f"What core topic does the instructor address in {ch_title}?",
+                    "answer": mid_seg.get("text", "").strip(),
+                    "category": "Concept",
+                    "chapter_title": ch_title,
+                    "timestamp_sec": float(mid_seg.get("start", chunk["start_sec"])),
+                })
+
+        # Second pass: if we have fewer cards than target_count, extract from remaining segments across chunks
+        if len(cards) < target_count:
+            used_answers = {c["answer"] for c in cards}
+            for chunk in chunks:
+                if len(cards) >= target_count:
+                    break
+                ch_title = chunk["chapter_title"]
+                for seg in chunk["segments"]:
+                    if len(cards) >= target_count:
+                        break
+                    text = seg.get("text", "").strip()
+                    if len(text) > 25 and text not in used_answers:
+                        used_answers.add(text)
+                        cards.append({
+                            "question": f"What key principle in {ch_title} is explained by the instructor?",
+                            "answer": text,
+                            "category": "Concept",
+                            "chapter_title": ch_title,
+                            "timestamp_sec": float(seg.get("start", chunk["start_sec"])),
+                        })
+
+        return cards
+
+    @staticmethod
+    def generate_more_cards(deck_id: str, user_id: str, count: int = 5) -> FlashcardDeck:
+        """Generates additional grounded cards from the lecture transcript and appends them to existing deck without losing progress."""
+        deck = FlashcardService.get_deck_by_id(deck_id, user_id)
+        if not deck:
+            raise HTTPException(status_code=404, detail="Deck not found.")
+
+        clean_vid = deck.video_id
+        transcript = fetch_youtube_transcript(clean_vid, allow_placeholder=False) or get_demo_transcript(clean_vid)
+        if not transcript or len(transcript) < 2:
+            raise HTTPException(
+                status_code=422,
+                detail="Transcript is unavailable to generate additional cards."
+            )
+
+        total_dur = max(transcript[-1]["start"] + transcript[-1].get("duration", 0.0), 60.0)
+        chapters = get_demo_chapters(clean_vid) or get_dynamic_chapters(clean_vid) or []
+        if not chapters:
+            from app.schemas import Chapter
+            chapters = [
+                Chapter(id=1, title="Lecture Fundamentals", start_sec=0, end_sec=int(total_dur / 2)),
+                Chapter(id=2, title="Advanced Principles", start_sec=int(total_dur / 2), end_sec=int(total_dur)),
+            ]
+
+        chunks = FlashcardService._partition_transcript_by_chapters(transcript, chapters, total_dur)
+        new_candidates = FlashcardService._extract_grounded_cards_from_full_transcript(chunks, count + 4)
+
+        # Filter out questions already in deck
+        existing_questions = {c.question.lower().strip() for c in deck.cards}
+        unique_new = [c for c in new_candidates if c["question"].lower().strip() not in existing_questions][:count]
+
+        if not unique_new:
+            # Fallback: create fresh questions from different segments
+            for i in range(count):
+                seg = transcript[(i * 3 + 2) % len(transcript)]
+                unique_new.append({
+                    "question": f"Explain this lecture point discussed at {format_video_time(seg['start'])}:",
+                    "answer": seg["text"],
+                    "category": "Concept",
+                    "chapter_title": chapters[i % len(chapters)].title,
+                    "timestamp_sec": float(seg["start"]),
+                })
+
+        now_ms = int(time.time() * 1000)
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        max_order = max([c.order_index for c in deck.cards], default=-1)
+
+        for idx, item in enumerate(unique_new):
+            c_id = f"c_{secrets.token_hex(6)}"
+            q = item["question"]
+            a = item["answer"]
+            cat = item.get("category", "Concept")
+            ch = item.get("chapter_title", "Lecture Concepts")
+            sec = float(item.get("timestamp_sec", 0.0))
+            fmt_sec = format_video_time(sec)
+            order_idx = max_order + 1 + idx
+
+            cur.execute("""
+                INSERT INTO flashcards (
+                    id, deck_id, question, answer, category, chapter_title,
+                    timestamp_sec, timestamp_formatted, confidence, is_bookmarked,
+                    review_count, last_reviewed_at, order_index, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                c_id, deck_id, q, a, cat, ch, sec, fmt_sec, "unreviewed", 0, 0, None, order_idx, now_ms, now_ms
+            ))
+
+        # Update deck card count
+        cur.execute("SELECT COUNT(*) FROM flashcards WHERE deck_id = ?", (deck_id,))
+        new_cnt = cur.fetchone()[0]
+        cur.execute("UPDATE flashcard_decks SET card_count = ?, updated_at = ? WHERE id = ?", (new_cnt, now_ms, deck_id))
+        conn.commit()
+        conn.close()
+
+        refreshed = FlashcardService.get_deck_by_id(deck_id, user_id)
+        return refreshed or deck
 
     @staticmethod
     def _partition_transcript_by_chapters(
@@ -931,6 +997,7 @@ STRICT CONSTRAINTS:
         refreshed = FlashcardService.get_deck_by_id(deck_id, user_id)
         return refreshed or deck
 
+
     @staticmethod
     def update_card(card_id: str, user_id: str, req: UpdateCardRequest) -> Optional[FlashcardItem]:
         """Edits an existing flashcard (question, answer, category, or bookmark status)."""
@@ -1171,12 +1238,11 @@ STRICT CONSTRAINTS:
         a = req.current_answer or ""
         vid = req.video_id
 
-        # 1. Action: Simplify
         if action == "simplify":
             reply = (
                 f"**Simplified Explanation:**\n\n"
-                f"In everyday terms: {q} means that {a.lower() if a else 'components bond into a continuous functional structure'}.\n\n"
-                f"Key takeaway: Small units join repeatedly into one strong, durable chain without unnecessary complexity."
+                f"{a if a else 'This concept represents a foundational principle from your lecture.'}\n\n"
+                f"**Key Takeaway:** Focus on the core relationship between the inputs and results described in this section."
             )
             return AiAssistResponse(
                 reply=reply,
@@ -1184,62 +1250,43 @@ STRICT CONSTRAINTS:
                 suggested_answer=f"Simplified: {a[:160]}..." if len(a) > 160 else a,
                 suggested_category="Concept",
             )
-
-        # 2. Action: Analogy
         elif action == "analogy":
             reply = (
                 f"💡 **Everyday Analogy for '{q}':**\n\n"
-                f"Imagine a box of individual paperclips (monomers). If you hook them together one by one into a long necklace, "
-                f"you get a polymer! \n\n"
-                f"If you then cross-link several necklaces side-to-side with twist ties (like sulfur in vulcanized rubber), "
-                f"they can no longer slide past each other—forming a rigid, resilient 3D mesh that bounces back into shape!"
+                f"Think of {q} like modular building blocks: each individual element carries specific properties, and when combined in sequence, they establish a robust, interconnected system."
             )
             return AiAssistResponse(
                 reply=reply,
-                suggested_question=f"Analogy: How can we visualize {q}?",
-                suggested_answer="Visualize paperclips hooked into long chains, with cross-links acting like twist ties that lock the structure into an elastic network.",
+                suggested_question=f"Analogy for: {q}",
+                suggested_answer=f"Modular components working together in an interconnected sequence.",
                 suggested_category="Concept",
             )
-
-        # 3. Action: Explain In Depth
         elif action == "explain":
             reply = (
                 f"📖 **Deep-Dive Explanation:**\n\n"
                 f"**Concept:** {q}\n\n"
                 f"**Underlying Mechanism:** {a}\n\n"
-                f"In academic exams and lab applications, questions on this topic test whether you understand how molecular-level structure "
-                f"directly dictates bulk physical properties (such as tensile strength, melting temperature, and flexibility)."
+                f"In exams and applications, questions on this topic test whether you understand the fundamental reasoning and relationships covered in this lecture segment."
             )
             return AiAssistResponse(reply=reply)
-
-        # 4. Action: Generate More Cards on this concept
         elif action == "generate_more":
             new_cards = [
                 CreateCardRequest(
-                    question=f"What is the primary factor limiting the rate of {q[:45]}?",
-                    answer=f"Kinetic chain transfer and steric hindrance around reactive sites dictate the termination speed and overall yield.",
+                    question=f"What is the core principle governing {q[:45]}?",
+                    answer=f"The fundamental rules and principles introduced in this lecture segment.",
                     category="Concept",
-                    chapter_title="Advanced Applications",
-                    timestamp_sec=510.0,
-                ),
-                CreateCardRequest(
-                    question=f"How can students experimentally verify {q[:45]}?",
-                    answer="Using Differential Scanning Calorimetry (DSC) or Gel Permeation Chromatography (GPC) to characterize thermal transitions and molecular weight distributions.",
-                    category="Important Fact",
-                    chapter_title="Experimental Methods",
-                    timestamp_sec=780.0,
+                    chapter_title="Related Concepts",
+                    timestamp_sec=0.0,
                 ),
             ]
-            reply = f"Generated 2 complementary high-yield study cards grounded in this topic! Click **Add to Deck** below to include them."
+            reply = f"Generated a complementary study card grounded in this topic! Click **Add to Deck** below to include it."
             return AiAssistResponse(reply=reply, generated_cards=new_cards)
-
-        # 5. Default / Custom Chat
         else:
             msg = req.user_message or "Tell me more about this card"
             reply = (
-                f"Regarding **'{q}'**: \n\n"
+                f"Regarding **'{q}'**:\n\n"
                 f"{a}\n\n"
-                f"To master this for your upcoming assessments, focus on the distinction between kinetic initiation versus equilibrium conversion!"
+                f"To master this for your upcoming assessments, review how this concept connects to the preceding and following lecture segments."
             )
             return AiAssistResponse(reply=reply)
 
